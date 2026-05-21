@@ -148,5 +148,17 @@ function groupVehiclesByBrand(vehicles: SpecPartsVehicle[]): Record<string, Spec
     if (!out[brand]) out[brand] = [];
     out[brand].push(v);
   }
-  return out;
+  // Ordenar marcas alfabéticamente
+  const sorted: Record<string, SpecPartsVehicle[]> = {};
+  for (const brand of Object.keys(out).sort((a, b) => a.localeCompare(b, "es"))) {
+    // Ordenar modelos dentro de cada marca: master_model → version
+    out[brand].sort((a, b) => {
+      const ma = (a.master_model || a.model || "").toUpperCase();
+      const mb = (b.master_model || b.model || "").toUpperCase();
+      if (ma !== mb) return ma.localeCompare(mb);
+      return (a.version || "").toUpperCase().localeCompare((b.version || "").toUpperCase());
+    });
+    sorted[brand] = out[brand];
+  }
+  return sorted;
 }
