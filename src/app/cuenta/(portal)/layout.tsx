@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PortalNav } from "@/components/cuenta/PortalNav";
 import { CerrarSesionButton } from "@/components/cuenta/CerrarSesionButton";
 import { ImpersonationBanner } from "@/components/cuenta/ImpersonationBanner";
-import { getCurrentClient, isImpersonating } from "@/lib/b2b/current-client";
+import { getCurrentClient, isImpersonating, isUsingMockFallback } from "@/lib/b2b/current-client";
 
 export const metadata: Metadata = {
   title: { default: "Mi cuenta", template: "%s | Portal clientes Griffo" },
@@ -16,6 +16,7 @@ export default async function PortalLayout({
 }) {
   const client = await getCurrentClient();
   const impersonating = await isImpersonating();
+  const isMock = await isUsingMockFallback();
 
   return (
     <div className="bg-gray-50 min-h-[calc(100vh-220px)]">
@@ -35,7 +36,7 @@ export default async function PortalLayout({
               </p>
             </div>
             <div className="flex items-center gap-2">
-              {!impersonating && (
+              {!impersonating && isMock && (
                 <span className="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-50 border border-amber-200 text-xs font-semibold text-amber-900">
                   🚧 Modo demo
                 </span>

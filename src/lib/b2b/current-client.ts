@@ -32,6 +32,14 @@ export async function getCurrentClient(): Promise<BejermanClient> {
   return mockCurrentClient;
 }
 
+/** True cuando no hay sesión real ni impersonación — se usa el cliente mock. */
+export async function isUsingMockFallback(): Promise<boolean> {
+  const imp = await getImpersonatedCode();
+  if (imp) return false;
+  const sid = await getB2bSessionClientId();
+  return !sid;
+}
+
 export async function isImpersonating(): Promise<boolean> {
   return (await getImpersonatedCode()) !== null;
 }
