@@ -112,7 +112,7 @@ export function VehiclesModal({
                           )}
                           <span>
                             <span className={isNuevo ? "font-black" : "font-semibold"}>
-                              {v.master_model || v.model}
+                              {v.model || v.master_model}
                             </span>
                             {v.version ? (
                               <span className={isNuevo ? "text-red-500" : "text-gray-500"}>
