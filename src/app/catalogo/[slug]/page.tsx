@@ -206,8 +206,12 @@ export default async function ProductoCatalogoPage({ params }: { params: Params 
                   <ul className="mt-1.5 space-y-0.5">
                     {vehicles.map((v, i) => (
                       <li key={`${v.model}-${i}`} className="text-[11px] text-gray-600">
-                        {v.model || v.master_model}
-                        {v.version ? ` ${v.version}` : ""}{" "}
+                        <span className="font-bold text-[#0a2b3d]">
+                          {v.model || v.master_model}
+                        </span>
+                        {v.version ? (
+                          <span> — {v.version}</span>
+                        ) : null}{" "}
                         <span className="text-gray-400">
                           ({v.sold_from_year}–{v.sold_until_year})
                         </span>
