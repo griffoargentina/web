@@ -455,45 +455,65 @@ export function buildSuspensionMeasureRows(
   return products
     .filter(isSuspension)
     .map((p): SuspensionMeasureRow => {
-      const h = `${p.product ?? ""} ${p.description ?? ""}`.toLowerCase();
-      const hasFuelle = h.includes("fuelle");
-      const hasTope = h.includes("tope");
+      // Extraemos TODOS los atributos incondicionalmente.
+      // hasFuelle/hasTope se derivan del nombre Y de si se encontraron
+      // medidas relevantes — así los kits que no dicen "tope" en el
+      // nombre igual muestran las columnas de tope si el dato existe.
 
-      // Medidas del fuelle: boca menor/mayor + largo.
-      // "largo" genérico siempre como último fallback del fuelle.
-      const diamMenorFuelle = hasFuelle
-        ? getAttrValue(p, "boca menor") ||
-          getAttrValue(p, "diámetro menor") ||
-          getAttrValue(p, "diam. menor")
-        : "";
-      const diamMayorFuelle = hasFuelle
-        ? getAttrValue(p, "boca mayor") ||
-          getAttrValue(p, "diámetro mayor") ||
-          getAttrValue(p, "diam. mayor")
-        : "";
+      const diamMenorFuelle =
+        getAttrValue(p, "boca menor") ||
+        getAttrValue(p, "diámetro menor") ||
+        getAttrValue(p, "diam. menor");
+      const diamMayorFuelle =
+        getAttrValue(p, "boca mayor") ||
+        getAttrValue(p, "diámetro mayor") ||
+        getAttrValue(p, "diam. mayor");
+
+      // Diám. interno del tope: intentamos todos los nombres posibles.
+      // Para topes solos, SpecParts puede usar "boca menor" como
+      // "diámetro interno" (el agujero central). Pero solo si el
+      // producto NO tiene fuelle (para evitar pisar la col. fuelle).
+      const nameH = `${p.product ?? ""} ${p.description ?? ""}`.toLowerCase();
+      const hasFuelleByName = nameH.includes("fuelle");
+
+      const diamInternoTopeRaw =
+        getAttrValue(p, "diámetro interior") ||
+        getAttrValue(p, "diámetro interno") ||
+        getAttrValue(p, "diam. interior") ||
+        getAttrValue(p, "diam. interno") ||
+        getAttrValue(p, "diám. interior") ||
+        getAttrValue(p, "diám. interno") ||
+        getAttrValue(p, "diámetro interior tope") ||
+        getAttrValue(p, "d. interno") ||
+        (!hasFuelleByName
+          ? getAttrValue(p, "boca menor") || getAttrValue(p, "diámetro menor")
+          : "");
+
+      const largoTopeRaw =
+        getAttrValue(p, "largo tope") ||
+        getAttrValue(p, "long. tope") ||
+        getAttrValue(p, "altura libre") ||
+        getAttrValue(p, "altura");
+
+      // Derivamos los flags desde nombre + presencia de atributos.
+      const hasFuelle = hasFuelleByName || !!(diamMenorFuelle && diamMayorFuelle);
+      const hasTope =
+        nameH.includes("tope") ||
+        !!diamInternoTopeRaw ||
+        !!largoTopeRaw;
+
+      // Largo: "largo" genérico va al fuelle si hay fuelle, al tope si tope solo.
+      const largoGenerico = getAttrValue(p, "largo");
       const largoFuelle = hasFuelle
         ? getAttrValue(p, "largo fuelle") ||
           getAttrValue(p, "long. fuelle") ||
-          getAttrValue(p, "largo")          // siempre fallback
-        : "";
-
-      // Medidas del tope: diámetro interior + largo.
-      // Para tope solo: "largo" genérico. Para kit: "largo tope" específico.
-      const diamInternoTope = hasTope
-        ? getAttrValue(p, "diámetro interior") ||
-          getAttrValue(p, "diámetro interno") ||
-          getAttrValue(p, "diam. interior") ||
-          getAttrValue(p, "diam. interno") ||
-          getAttrValue(p, "diám. interior") ||
-          getAttrValue(p, "diám. interno")
+          largoGenerico
         : "";
       const largoTope = hasTope
-        ? getAttrValue(p, "largo tope") ||
-          getAttrValue(p, "long. tope") ||
-          getAttrValue(p, "altura libre") ||
-          getAttrValue(p, "altura") ||
-          (!hasFuelle ? getAttrValue(p, "largo") : "")
+        ? largoTopeRaw || (!hasFuelle ? largoGenerico : "")
         : "";
+
+      const diamInternoTope = hasTope ? diamInternoTopeRaw : "";
 
       return {
         code: p.code ?? "",
@@ -503,11 +523,11 @@ export function buildSuspensionMeasureRows(
         vehicles: p.vehicles ?? [],
         hasFuelle,
         hasTope,
-        diamMenorFuelle,
-        diamMayorFuelle,
+        diamMenorFuelle: hasFuelle ? diamMenorFuelle : "",
+        diamMayorFuelle: hasFuelle ? diamMayorFuelle : "",
         largoFuelle,
-        diamMenorFuelleNum: toNumber(diamMenorFuelle),
-        diamMayorFuelleNum: toNumber(diamMayorFuelle),
+        diamMenorFuelleNum: toNumber(hasFuelle ? diamMenorFuelle : ""),
+        diamMayorFuelleNum: toNumber(hasFuelle ? diamMayorFuelle : ""),
         largoFuelleNum: toNumber(largoFuelle),
         diamInternoTope,
         largoTope,
