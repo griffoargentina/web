@@ -24,6 +24,8 @@ import {
   searchByVehicle,
   type MeasureRow,
   type MeasureType,
+  type SuspensionMeasureRow,
+  buildSuspensionMeasureRows,
 } from "@/lib/catalog/utils";
 import {
   applyFilters,
@@ -569,13 +571,17 @@ export function CatalogSearch({ products, status, trebolesUrl, mlLinks = {} }: P
       {/* ---------------- Área de resultados ---------------- */}
       {tab === "medidas" ? (
         <div className="px-4 py-6 lg:px-6">
-          <MeasuresTable
-            products={products}
-            type={measureType}
-            trebolesUrl={trebolesUrl}
-            trebolesOpen={trebolesOpen}
-            onCloseTreboles={() => setTrebolesOpen(false)}
-          />
+          {measureType === "tope" ? (
+            <SuspensionMeasuresTable products={products} />
+          ) : (
+            <MeasuresTable
+              products={products}
+              type={measureType}
+              trebolesUrl={trebolesUrl}
+              trebolesOpen={trebolesOpen}
+              onCloseTreboles={() => setTrebolesOpen(false)}
+            />
+          )}
         </div>
       ) : (
         <div
@@ -785,7 +791,7 @@ function MeasuresSelector({
   const opts: { key: MeasureType; label: string }[] = [
     { key: "direccion", label: "Fuelle Dirección" },
     { key: "transmision", label: "Fuelle Transmisión" },
-    { key: "tope", label: "Tope Amortiguador" },
+    { key: "tope", label: "Suspensión" },
   ];
   return (
     <div className="flex flex-wrap gap-2">
@@ -1359,5 +1365,173 @@ function FilterIcon() {
     >
       <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
     </svg>
+  );
+}
+
+/* ========================================================================== */
+/*  TABLA SUSPENSIÓN                                                           */
+/* ========================================================================== */
+
+type SuspSortCol =
+  | "diamMenorFuelle"
+  | "diamMayorFuelle"
+  | "largoFuelle"
+  | "diamInternoTope"
+  | "largoTope"
+  | "code";
+
+function SuspensionMeasuresTable({ products }: { products: CatalogProduct[] }) {
+  const [sortCol, setSortCol] = useState<SuspSortCol>("diamInternoTope");
+  const [sortAsc, setSortAsc] = useState(true);
+  const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
+
+  const rows = useMemo(() => buildSuspensionMeasureRows(products), [products]);
+
+  const sorted = useMemo(() => {
+    const numKey: Partial<Record<SuspSortCol, keyof SuspensionMeasureRow>> = {
+      diamMenorFuelle: "diamMenorFuelleNum",
+      diamMayorFuelle: "diamMayorFuelleNum",
+      largoFuelle: "largoFuelleNum",
+      diamInternoTope: "diamInternoTopeNum",
+      largoTope: "largoTopeNum",
+    };
+    return [...rows].sort((a, b) => {
+      if (sortCol === "code") {
+        return sortAsc ? a.code.localeCompare(b.code) : b.code.localeCompare(a.code);
+      }
+      const key = numKey[sortCol];
+      if (!key) return 0;
+      const va = (a[key] as number | null) ?? (sortAsc ? Infinity : -Infinity);
+      const vb = (b[key] as number | null) ?? (sortAsc ? Infinity : -Infinity);
+      return sortAsc ? va - vb : vb - va;
+    });
+  }, [rows, sortCol, sortAsc]);
+
+  const onSort = (col: SuspSortCol) => {
+    if (col === sortCol) setSortAsc(!sortAsc);
+    else { setSortCol(col); setSortAsc(true); }
+  };
+
+  return (
+    <>
+      <p className="text-xs text-gray-500 mb-3">
+        <span className="font-bold text-[#0a2b3d]">{sorted.length}</span>{" "}
+        {sorted.length === 1 ? "producto" : "productos"}
+        <span className="ml-2 text-gray-400">
+          · Kits (fuelle + tope) tienen todas las medidas completas · Topes solos muestran solo columnas de tope
+        </span>
+      </p>
+      <div className="rounded-lg border border-gray-100 overflow-x-auto">
+        <table className="min-w-full text-xs">
+          <thead
+            className="sticky z-10 bg-primary text-white shadow-sm"
+            style={{ top: "var(--catalog-header-bottom, 200px)" }}
+          >
+            <tr>
+              {/* Grupo fuelle */}
+              <Th onClick={() => onSort("diamMenorFuelle")} active={sortCol === "diamMenorFuelle"} asc={sortAsc}>
+                Ø Menor Fuelle
+              </Th>
+              <Th onClick={() => onSort("diamMayorFuelle")} active={sortCol === "diamMayorFuelle"} asc={sortAsc}>
+                Ø Mayor Fuelle
+              </Th>
+              <Th onClick={() => onSort("largoFuelle")} active={sortCol === "largoFuelle"} asc={sortAsc}>
+                Largo Fuelle
+              </Th>
+              {/* Divisor visual */}
+              <th className="px-1 py-2 bg-primary/80 w-px" aria-hidden />
+              {/* Grupo tope */}
+              <Th onClick={() => onSort("diamInternoTope")} active={sortCol === "diamInternoTope"} asc={sortAsc}>
+                Ø Int. Tope
+              </Th>
+              <Th onClick={() => onSort("largoTope")} active={sortCol === "largoTope"} asc={sortAsc}>
+                Largo Tope
+              </Th>
+              {/* Info */}
+              <Th onClick={() => onSort("code")} active={sortCol === "code"} asc={sortAsc}>
+                Código
+              </Th>
+              <th className="px-3 py-2 text-right text-[11px] font-bold uppercase tracking-wide">
+                Foto
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((row) => (
+              <SuspensionRowView
+                key={row.code}
+                row={row}
+                onImageClick={(src, alt) => setLightbox({ src, alt })}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {lightbox && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setLightbox(null)}
+        >
+          <img
+            src={lightbox.src}
+            alt={lightbox.alt}
+            className="max-h-[85vh] max-w-[85vw] rounded-lg object-contain shadow-2xl"
+          />
+        </div>
+      )}
+    </>
+  );
+}
+
+function SuspensionRowView({
+  row,
+  onImageClick,
+}: {
+  row: SuspensionMeasureRow;
+  onImageClick: (src: string, alt: string) => void;
+}) {
+  const dash = <span className="text-gray-300">—</span>;
+  return (
+    <tr className="border-t border-gray-100 hover:bg-gray-50">
+      <td className="px-3 py-2 text-[#0a2b3d]">{row.diamMenorFuelle || dash}</td>
+      <td className="px-3 py-2 text-[#0a2b3d]">{row.diamMayorFuelle || dash}</td>
+      <td className="px-3 py-2 text-[#0a2b3d]">{row.largoFuelle || dash}</td>
+      <td className="px-1 py-2 bg-gray-50 w-px" aria-hidden />
+      <td className="px-3 py-2 text-[#0a2b3d]">{row.diamInternoTope || dash}</td>
+      <td className="px-3 py-2 text-[#0a2b3d]">{row.largoTope || dash}</td>
+      <td className="px-3 py-2 font-mono text-[#0a2b3d]">
+        <a
+          href={`/catalogo/${row.productSlug}`}
+          className="hover:underline hover:text-primary"
+          title={row.productName}
+        >
+          {row.code}
+        </a>
+      </td>
+      <td className="px-3 py-2 text-right">
+        {row.imageUrl ? (
+          <button
+            type="button"
+            onClick={() => onImageClick(row.imageUrl!, row.productName)}
+            className="inline-block"
+            aria-label={`Ver foto de ${row.code}`}
+          >
+            <img
+              src={row.imageUrl}
+              alt={row.code}
+              width={40}
+              height={40}
+              className="rounded object-contain"
+              style={{ width: 40, height: 40 }}
+            />
+          </button>
+        ) : (
+          <span className="text-gray-300">—</span>
+        )}
+      </td>
+    </tr>
   );
 }

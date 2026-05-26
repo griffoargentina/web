@@ -403,3 +403,112 @@ export function buildMeasureRows(
   const predicate = type === "direccion" ? isFuelleDireccion : isTope;
   return products.filter(predicate).map((p) => buildMeasureRow(p));
 }
+
+/* ========= Suspensión: tabla unificada topes + fuelles ========= */
+
+export type SuspensionMeasureRow = {
+  code: string;
+  productSlug: string;
+  productName: string;
+  imageUrl: string | null;
+  vehicles: SpecPartsVehicle[];
+  /** True si el producto incluye fuelle (standalone o en kit). */
+  hasFuelle: boolean;
+  /** True si el producto incluye tope (standalone o en kit). */
+  hasTope: boolean;
+  // Fuelle
+  diamMenorFuelle: string;
+  diamMayorFuelle: string;
+  largoFuelle: string;
+  diamMenorFuelleNum: number | null;
+  diamMayorFuelleNum: number | null;
+  largoFuelleNum: number | null;
+  // Tope
+  diamInternoTope: string;
+  largoTope: string;
+  diamInternoTopeNum: number | null;
+  largoTopeNum: number | null;
+};
+
+/**
+ * Detecta si un producto pertenece a la línea Suspensión:
+ * topes, fuelles de suspensión y kits que combinan ambos.
+ * Excluye fuelles de dirección (cremallera) y transmisión (semieje)
+ * que ya tienen su propia pestaña.
+ */
+function isSuspension(p: SpecPartsProduct): boolean {
+  const h =
+    `${p.product ?? ""} ${p.description ?? ""} ${p.category ?? ""}`.toLowerCase();
+  const hasTope = h.includes("tope");
+  const hasFuelle = h.includes("fuelle");
+  if (!hasTope && !hasFuelle) return false;
+  // Excluir cremallera (dirección) y semieje (transmisión)
+  if (hasFuelle && !hasTope) {
+    if (h.includes("cremallera") || h.includes("semieje")) return false;
+  }
+  return true;
+}
+
+export function buildSuspensionMeasureRows(
+  products: CatalogProduct[],
+): SuspensionMeasureRow[] {
+  return products
+    .filter(isSuspension)
+    .map((p): SuspensionMeasureRow => {
+      const h = `${p.product ?? ""} ${p.description ?? ""}`.toLowerCase();
+      const hasFuelle = h.includes("fuelle");
+      const hasTope = h.includes("tope");
+
+      // Medidas del fuelle: boca menor/mayor + largo fuelle.
+      // Para kits, SpecParts debería exponer "largo fuelle" específico.
+      // Para fuelle solo, cae a "largo" genérico.
+      const diamMenorFuelle = hasFuelle
+        ? getAttrValue(p, "boca menor") ||
+          getAttrValue(p, "diámetro menor") ||
+          getAttrValue(p, "diam. menor")
+        : "";
+      const diamMayorFuelle = hasFuelle
+        ? getAttrValue(p, "boca mayor") ||
+          getAttrValue(p, "diámetro mayor") ||
+          getAttrValue(p, "diam. mayor")
+        : "";
+      const largoFuelle = hasFuelle
+        ? getAttrValue(p, "largo fuelle") ||
+          getAttrValue(p, "long. fuelle") ||
+          (!hasTope ? getAttrValue(p, "largo") : "")
+        : "";
+
+      // Medidas del tope: diámetro interior + largo tope.
+      const diamInternoTope = hasTope
+        ? getAttrValue(p, "diámetro interior") ||
+          getAttrValue(p, "diámetro interno") ||
+          getAttrValue(p, "diam. interior") ||
+          getAttrValue(p, "diam. interno")
+        : "";
+      const largoTope = hasTope
+        ? getAttrValue(p, "largo tope") ||
+          getAttrValue(p, "long. tope") ||
+          (!hasFuelle ? getAttrValue(p, "largo") : "")
+        : "";
+
+      return {
+        code: p.code ?? "",
+        productSlug: p.slug,
+        productName: p.product || p.description || "",
+        imageUrl: p.pictures?.[0]?.image_url ?? null,
+        vehicles: p.vehicles ?? [],
+        hasFuelle,
+        hasTope,
+        diamMenorFuelle,
+        diamMayorFuelle,
+        largoFuelle,
+        diamMenorFuelleNum: toNumber(diamMenorFuelle),
+        diamMayorFuelleNum: toNumber(diamMayorFuelle),
+        largoFuelleNum: toNumber(largoFuelle),
+        diamInternoTope,
+        largoTope,
+        diamInternoTopeNum: toNumber(diamInternoTope),
+        largoTopeNum: toNumber(largoTope),
+      };
+    });
+}
