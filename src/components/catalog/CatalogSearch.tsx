@@ -1421,7 +1421,7 @@ function SuspensionMeasuresTable({ products }: { products: CatalogProduct[] }) {
           · Kits (fuelle + tope) tienen todas las medidas completas · Topes solos muestran solo columnas de tope
         </span>
       </p>
-      <div className="rounded-lg border border-gray-100 overflow-x-auto">
+      <div className="rounded-lg border border-gray-100 overflow-visible">
         <table className="min-w-full text-xs">
           <thead
             className="sticky z-10 bg-primary text-white shadow-sm"
