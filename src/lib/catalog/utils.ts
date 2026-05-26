@@ -459,9 +459,8 @@ export function buildSuspensionMeasureRows(
       const hasFuelle = h.includes("fuelle");
       const hasTope = h.includes("tope");
 
-      // Medidas del fuelle: boca menor/mayor + largo fuelle.
-      // Para kits, SpecParts debería exponer "largo fuelle" específico.
-      // Para fuelle solo, cae a "largo" genérico.
+      // Medidas del fuelle: boca menor/mayor + largo.
+      // "largo" genérico siempre como último fallback del fuelle.
       const diamMenorFuelle = hasFuelle
         ? getAttrValue(p, "boca menor") ||
           getAttrValue(p, "diámetro menor") ||
@@ -475,19 +474,24 @@ export function buildSuspensionMeasureRows(
       const largoFuelle = hasFuelle
         ? getAttrValue(p, "largo fuelle") ||
           getAttrValue(p, "long. fuelle") ||
-          (!hasTope ? getAttrValue(p, "largo") : "")
+          getAttrValue(p, "largo")          // siempre fallback
         : "";
 
-      // Medidas del tope: diámetro interior + largo tope.
+      // Medidas del tope: diámetro interior + largo.
+      // Para tope solo: "largo" genérico. Para kit: "largo tope" específico.
       const diamInternoTope = hasTope
         ? getAttrValue(p, "diámetro interior") ||
           getAttrValue(p, "diámetro interno") ||
           getAttrValue(p, "diam. interior") ||
-          getAttrValue(p, "diam. interno")
+          getAttrValue(p, "diam. interno") ||
+          getAttrValue(p, "diám. interior") ||
+          getAttrValue(p, "diám. interno")
         : "";
       const largoTope = hasTope
         ? getAttrValue(p, "largo tope") ||
           getAttrValue(p, "long. tope") ||
+          getAttrValue(p, "altura libre") ||
+          getAttrValue(p, "altura") ||
           (!hasFuelle ? getAttrValue(p, "largo") : "")
         : "";
 
