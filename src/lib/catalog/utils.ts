@@ -458,19 +458,17 @@ export function buildSuspensionMeasureRows(
       const nameH =
         `${p.product ?? ""} ${p.description ?? ""} ${p.category ?? ""}`.toLowerCase();
 
-      // Detección SOLO por nombre — no por atributos.
-      // "boca menor" existe en fuelles Y en topes: no sirve para distinguir.
+      // hasFuelle: siempre por nombre (evita que attrs de topes contaminen cols de fuelle).
       const hasFuelle = nameH.includes("fuelle");
-      const hasTope = nameH.includes("tope");
+      // hasTope_byName: nombre contiene "tope" (topes solos y kits con "tope" explícito).
+      const hasTope_byName = nameH.includes("tope");
 
       let diamMenorFuelle = "";
       let diamMayorFuelle = "";
       let largoFuelle = "";
-      let diamInternoTope = "";
-      let largoTope = "";
 
       if (hasFuelle) {
-        // En fuelles, "boca menor/mayor" son las bocas del fuelle.
+        // "boca menor/mayor" son exclusivos del fuelle cuando hasFuelle=true.
         diamMenorFuelle =
           getAttrValue(p, "boca menor") ||
           getAttrValue(p, "diámetro menor") ||
@@ -485,28 +483,34 @@ export function buildSuspensionMeasureRows(
           getAttrValue(p, "largo");
       }
 
-      if (hasTope) {
-        // Para tope solo: "boca menor" es el diámetro interno del tope
-        // (el orificio por donde pasa el vástago). Solo se usa como
-        // fallback cuando no hay fuelle, para no pisar la col. fuelle.
-        diamInternoTope =
-          getAttrValue(p, "diámetro interior") ||
-          getAttrValue(p, "diámetro interno") ||
-          getAttrValue(p, "diam. interior") ||
-          getAttrValue(p, "diam. interno") ||
-          getAttrValue(p, "diám. interior") ||
-          getAttrValue(p, "diám. interno") ||
-          (!hasFuelle
-            ? getAttrValue(p, "boca menor") || getAttrValue(p, "diámetro menor")
-            : "");
+      // Atributos de tope: se intentan siempre con nombres no-ambiguos.
+      // Kits que no dicen "tope" en el nombre igual los tienen en SpecParts.
+      // "boca menor" SOLO se usa como fallback en topes solos (!hasFuelle)
+      // para no contaminar la col. Ø Menor Fuelle.
+      const diamInternoTopeRaw =
+        getAttrValue(p, "diámetro interior") ||
+        getAttrValue(p, "diámetro interno") ||
+        getAttrValue(p, "diam. interior") ||
+        getAttrValue(p, "diam. interno") ||
+        getAttrValue(p, "diám. interior") ||
+        getAttrValue(p, "diám. interno") ||
+        getAttrValue(p, "diámetro interior tope") ||
+        getAttrValue(p, "d. interno") ||
+        (!hasFuelle
+          ? getAttrValue(p, "boca menor") || getAttrValue(p, "diámetro menor")
+          : "");
 
-        largoTope =
-          getAttrValue(p, "largo tope") ||
-          getAttrValue(p, "long. tope") ||
-          getAttrValue(p, "altura libre") ||
-          getAttrValue(p, "altura") ||
-          (!hasFuelle ? getAttrValue(p, "largo") : "");
-      }
+      const largoTopeRaw =
+        getAttrValue(p, "largo tope") ||
+        getAttrValue(p, "long. tope") ||
+        getAttrValue(p, "altura libre") ||
+        getAttrValue(p, "altura") ||
+        (!hasFuelle ? getAttrValue(p, "largo") : "");
+
+      // hasTope definitivo: por nombre O si se encontró algún atributo de tope.
+      const hasTope = hasTope_byName || !!(diamInternoTopeRaw || largoTopeRaw);
+      const diamInternoTope = hasTope ? diamInternoTopeRaw : "";
+      const largoTope = hasTope ? largoTopeRaw : "";
 
       return {
         code: p.code ?? "",
