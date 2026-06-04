@@ -25,7 +25,7 @@ export function ProductCard({ product, mlLink }: ProductCardProps) {
 
   const primaryImage = product.pictures?.[0]?.image_url;
 
-  const { ubicaciones, lados } = getDisplayApplication(product);
+  const { ubicaciones, lados, tipoDireccion } = getDisplayApplication(product);
   const locationText = ubicaciones.join(", ");
   const sideText = lados.join(lados.length === 2 ? " y " : ", ");
 
@@ -134,6 +134,12 @@ export function ProductCard({ product, mlLink }: ProductCardProps) {
             <p className="text-[11px] text-gray-600">
               <span className="font-semibold text-gray-500">Lado: </span>
               <span className="font-semibold text-[#0a2b3d]">{sideText}</span>
+            </p>
+          ) : null}
+          {tipoDireccion ? (
+            <p className="text-[11px] text-gray-600">
+              <span className="font-semibold text-gray-500">Tipo: </span>
+              <span className="font-semibold text-[#0a2b3d]">{tipoDireccion}</span>
             </p>
           ) : null}
 

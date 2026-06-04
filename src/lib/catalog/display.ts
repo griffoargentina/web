@@ -14,11 +14,13 @@
  */
 
 import type { SpecPartsProduct } from "@/types/specparts";
-import { getAttrValues, getProductLocations } from "./utils";
+import { getAttrValue, getAttrValues, getProductLocations } from "./utils";
 
 export type DisplayApplication = {
   ubicaciones: string[];
   lados: string[];
+  /** Para productos de Dirección: "Mecánica" / "Hidráulica" / etc. */
+  tipoDireccion?: string;
 };
 
 export function isIzqDer(value: string): boolean {
@@ -48,12 +50,17 @@ export function getDisplayApplication(product: SpecPartsProduct): DisplayApplica
     lados = lados.filter((s) => !isIzqDer(s));
   }
 
+  let tipoDireccion: string | undefined;
+
   if (isDireccion) {
     const izqDer = lados.filter(isIzqDer);
     lados = lados.filter((s) => !isIzqDer(s));
     for (const s of izqDer) {
       if (!ubicaciones.includes(s)) ubicaciones.push(s);
     }
+    // "Tipo" / "Tipo de dirección" → Mecánica / Hidráulica
+    const t = getAttrValue(product, "tipo");
+    if (t) tipoDireccion = t;
   }
 
   if (isTransmision) {
@@ -63,5 +70,5 @@ export function getDisplayApplication(product: SpecPartsProduct): DisplayApplica
     });
   }
 
-  return { ubicaciones, lados };
+  return { ubicaciones, lados, tipoDireccion };
 }
