@@ -597,9 +597,16 @@ params con brackets, usar **`https` nativo de Node + `zlib.gunzip`**, NUNCA
 3. **Vehículo**: selects cascada Marca → Modelo → Año. Excluye AGRALE, IVECO,
    UNIVERSAL (no se venden en AR).
 4. **Código**: substring case-insensitive sobre `product.code`.
-5. **Medidas**: tabla sorteable con 3 sub-tipos (Dirección = FUELLE CREMALLERA;
-   Transmisión = KIT FUELLE SEMIEJE agrupado por código base; Tope = TOPE
-   AMORTIGUADOR). Sin sidebar de filtros.
+5. **Medidas**: tabla sorteable con 3 sub-tipos:
+   - **Dirección** = FUELLE CREMALLERA (columnas: Ø Menor, Ø Mayor, Largo, Código, Foto)
+   - **Transmisión** = KIT FUELLE SEMIEJE agrupado por código base
+   - **Suspensión** (antes "Tope Amortiguador") = tabla unificada fuelles + topes con
+     7 columnas: Ø Menor Fuelle, Ø Mayor Fuelle, Largo Fuelle, Ø Int. Tope, Largo Tope,
+     Código, Foto. Fuelles solos: columnas de tope muestran `—`. Topes solos: columnas
+     de fuelle muestran `—`. Kits (hasTope detectado por atributos no-ambiguos):
+     columnas de tope se llenan si SpecParts las tiene (en la práctica, los kits en
+     SpecParts no tienen atributos de tope cargados → quedan `—`).
+   Sin sidebar de filtros.
 
 ### Filtros facetados (sidebar)
 
@@ -677,13 +684,24 @@ No volver a esa variante sin pedirle confirmación.
 ### Reglas por línea (helper `getDisplayApplication`)
 
 `src/lib/catalog/display.ts`. Aplica tanto en ProductCard como en
-detalle del producto:
+detalle del producto. Devuelve `{ ubicaciones, lados, tipoDireccion? }`.
 
 - **Suspensión**: oculta "Lado IZQUIERDO/DERECHO" (no aporta — son
   simétricos). DELANTERO/TRASERO sí quedan.
 - **Dirección**: promueve "Lado IZQUIERDO/DERECHO" a "Ubicación"
-  (es el dato principal).
+  (es el dato principal). Además extrae el atributo `"tipo"` (match
+  substring) y lo expone como `tipoDireccion` → la `ProductCard` lo
+  muestra como "Tipo: Mecánica / Hidráulica".
 - **Transmisión**: en "Ubicación" sólo deja LADO CAJA / LADO RUEDA.
+
+**Nota sobre atributos de SpecParts**:
+- `observation` a nivel producto siempre viene `null` en `/part/list`.
+- `SpecPartsVehicle` no expone `observation` ni `engine` — solo están
+  en el admin de SpecParts, no en la API pública.
+- Para kits (Suspensión), SpecParts no carga atributos de tope —
+  solo guarda los del fuelle + un atributo "Componentes" con texto
+  descriptivo. No hay forma de obtener medidas del tope para kits
+  sin que SpecParts los cargue en el backend.
 
 ### Detalle de producto (`/catalogo/[slug]`)
 

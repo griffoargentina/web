@@ -35,6 +35,12 @@ Todo lo siguiente se construyó entre el merge de la rama nueva y el
 - [x] Tabla de medidas con 3 sub-tipos + llamadores + modal de versiones
 - [x] `/catalogo/download` con 3 secciones + forms de captura gated
 - [x] Sticky header de una sola fila + imagen de card más compacta
+- [x] Tab "Tope Amortiguador" renombrado a "Suspensión"; tabla unificada
+      fuelles + topes con 7 columnas (Ø Menor/Mayor Fuelle, Largo Fuelle,
+      Ø Int. Tope, Largo Tope, Código, Foto)
+- [x] hasFuelle/hasTope: detección por nombre + atributos no-ambiguos
+      (evita que attrs de topes contaminen cols de fuelle)
+- [x] Card Dirección muestra "Tipo: Mecánica / Hidráulica" desde attr "tipo"
 
 ### Portal B2B (`/cuenta/*`)
 - [x] Login mock + `PortalNav` + layout con `ImpersonationBanner`
