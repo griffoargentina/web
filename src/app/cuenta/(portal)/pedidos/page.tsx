@@ -141,8 +141,8 @@ export default async function PedidosPage() {
                   <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
                     {formatDate(o.createdAt)}
                   </td>
-                  <td className="px-4 py-3 text-gray-400 text-xs italic">
-                    —
+                  <td className="px-4 py-3 text-gray-700 text-xs">
+                    {o.warehouseDescription || o.sucursal || o.deposito || o.warehouseId || "—"}
                   </td>
                   <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
                     {o.estimatedDispatchDate

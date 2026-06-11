@@ -246,6 +246,20 @@ export interface BejermanPendingOrder {
   status: string;
   itemCount: number;
   total: number;
+  /** Sucursal/depósito del pedido. El ERP puede mandar distintos nombres. */
+  sucursal?: string;
+  warehouseId?: string;
+  warehouseDescription?: string;
+  deposito?: string;
+}
+
+/** Status strings de Bejerman que se consideran cancelados (case-insensitive). */
+const CANCELLED_STATUSES = ["cancelado", "cancelled", "anulado"];
+
+function isCancelled(order: BejermanPendingOrder): boolean {
+  return CANCELLED_STATUSES.some((s) =>
+    order.status.toLowerCase().includes(s),
+  );
 }
 
 export async function getPendingOrdersForClient(
@@ -262,7 +276,8 @@ export async function getPendingOrdersForClient(
       );
       return [];
     }
-    return raw;
+    // Excluir pedidos cancelados — no se muestran en el portal.
+    return raw.filter((o) => !isCancelled(o));
   } catch (e) {
     // Logueamos siempre (no sólo en dev) porque ahora el endpoint
     // existe — cualquier fallo es un bug real que hay que mirar.
