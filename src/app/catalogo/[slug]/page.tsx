@@ -182,6 +182,33 @@ export default async function ProductoCatalogoPage({ params }: { params: Params 
               </span>
             </p>
           ) : null}
+
+          {/* 7. Referencias OEM */}
+          {(() => {
+            const oems = [
+              ...(product.cross ?? []).filter((c) => c.oem === 1),
+              ...(product.reference ?? []).filter((c) => c.oem === 1),
+            ];
+            if (!oems.length) return null;
+            return (
+              <section>
+                <h2 className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                  Referencias OEM
+                </h2>
+                <div className="flex flex-wrap gap-2">
+                  {oems.map((c, i) => (
+                    <span
+                      key={`${c.brand}-${c.code}-${i}`}
+                      className="inline-flex items-center gap-1.5 rounded border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px]"
+                    >
+                      <span className="font-semibold uppercase text-gray-500">{c.brand}</span>
+                      <span className="font-mono font-bold text-[#0a2b3d]">{c.code}</span>
+                    </span>
+                  ))}
+                </div>
+              </section>
+            );
+          })()}
         </div>
       </div>
 
