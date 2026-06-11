@@ -328,7 +328,11 @@ portal:
   Component: `components/cuenta/LanzamientosCarousel.tsx`. Sin saludo
   "Hola, X" — fuera a pedido de la cliente.
 - `/cuenta/(portal)/pedidos/page.tsx` — tabla con ERP ID, ref web,
-  fecha, estado, ítems, total. Estados pintados por `PedidoStatusPill`.
+  fecha, sucursal, estado, ítems, total. Estados pintados por `PedidoStatusPill`.
+  Los pedidos ERP con status "cancelado/cancelled/anulado" se filtran
+  antes de mostrar — no aparecen en el portal. El campo sucursal se
+  lee de `warehouseDescription | sucursal | deposito | warehouseId`
+  (el que mande el ERP).
 - `/cuenta/(portal)/pedidos/[id]/page.tsx` — detalle del pedido con
   items, totales, `CancelarPedidoButton` si está en estado cancelable.
 - `/cuenta/(portal)/armar-pedido/page.tsx` — 3 tabs: **Grilla por
