@@ -713,7 +713,9 @@ Layout por prioridad de info (de más a menos relevante):
 4. CTA **MercadoLibre** (arriba del fold)
 5. Tabla compacta de medidas (divide-y, no cajas grandes)
 6. Componentes del kit (si aplica) — inline
-7. Vehículos compatibles — **masonry CSS columns** (cada card
+7. **Referencias OEM** — chips `MARCA CÓDIGO` filtrados de `cross[]` y
+   `reference[]` donde `oem === 1`. Solo aparece si hay datos en SpecParts.
+8. Vehículos compatibles — **masonry CSS columns** (cada card
    ocupa solo el alto que necesita), ordenados por cantidad desc
 
 ### Productos destacados → landing rica

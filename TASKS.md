@@ -41,6 +41,8 @@ Todo lo siguiente se construyó entre el merge de la rama nueva y el
 - [x] hasFuelle/hasTope: detección por nombre + atributos no-ambiguos
       (evita que attrs de topes contaminen cols de fuelle)
 - [x] Card Dirección muestra "Tipo: Mecánica / Hidráulica" desde attr "tipo"
+- [x] Ficha de producto muestra sección "Referencias OEM" (cross[] + reference[]
+      donde oem === 1) como chips marca + código
 
 ### Portal B2B (`/cuenta/*`)
 - [x] Login mock + `PortalNav` + layout con `ImpersonationBanner`
