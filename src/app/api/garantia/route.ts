@@ -63,7 +63,7 @@ export async function POST(request: Request) {
     try {
       await sendEmail({
         from: "Griffo <contacto@griffo.com.ar>",
-        to: "contacto@griffo.com.ar",
+        to: ["contacto@griffo.com.ar", "jgriffo@griffo.com.ar"],
         replyTo: email,
         subject: `Registro de garantía — ${body.name} (S/N: ${body.serial})`,
         html: `
