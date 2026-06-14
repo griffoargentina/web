@@ -177,7 +177,7 @@ export async function sendWeeklyDigest(): Promise<{
   try {
     await sendEmail({
       from: "Griffo <contacto@griffo.com.ar>",
-      to: [recipient],
+      to: [...new Set([recipient, "jgriffo@griffo.com.ar"])],
       subject,
       html: renderHtml(summary),
     });
