@@ -1371,7 +1371,8 @@ Tres capas para enterarse si algo se rompe:
    "✅ todo OK"; si algo rojo → "⚠️ resumen con alertas".
    Destinatario: hash Redis `b2b:config.healthDigestEmail` (override),
    o env var `HEALTH_DIGEST_EMAIL`, o fallback a
-   `contacto@griffo.com.ar`.
+   `contacto@griffo.com.ar`. Siempre se agrega `jgriffo@griffo.com.ar`
+   como segundo destinatario fijo (deduplicado con Set).
 
 Alertas que chequea `findConfigAlerts` (todas las env vars críticas
 deberían figurar acá si no están seteadas):
