@@ -781,18 +781,21 @@ URLs indexables en Google (cada producto tiene una sola URL canónica).
 Diseño actual (`src/lib/admin-auth.ts`):
 
 - **Cookie**: `griffo-admin-session`, httpOnly, secure, sameSite=lax,
-  TTL 7 días. Contiene un **session ID random de 32 bytes hex** — no
-  deriva del password.
-- **Store**: key `admin:session:<id>` en Upstash Redis con TTL.
-  Metadata: `createdAt`, `userAgent`, `ip`. Logout borra la entry →
-  el cookie queda inútil aunque se lo roben.
-- **Verificación de password**: `timingSafeEqual` de `node:crypto`
-  (no `===`) para evitar side-channels.
+  TTL 7 días. Dos formatos posibles (ver más abajo).
+- **Modo primario (Redis disponible)**: cookie contiene un session ID
+  random de 32 bytes hex. Store: key `admin:session:<id>` en Upstash
+  Redis con TTL. Metadata: `createdAt`, `userAgent`, `ip`. Logout borra
+  la entry → cookie queda inútil aunque se la roben.
+- **Modo fallback (Redis no disponible)**: cookie empieza con `"fallback:"`
+  seguido de un token HMAC-SHA256 firmado con `ADMIN_PASSWORD` y un
+  timestamp de expiración. No es revocable por sesión, pero es seguro
+  mientras `ADMIN_PASSWORD` sea secreto. El sistema lo activa
+  automáticamente — sin cambios de código ni intervención manual.
+  Cuando Redis vuelva, el próximo login genera una sesión Redis normal.
+- **Verificación de password**: `timingSafeEqual` de `node:crypto`.
 - **Rate limit en `/api/admin/login`**: 5 intentos por IP por minuto
   (counter Redis con TTL). Al 6º → `429`. Fail-open si Redis está
-  abajo (prefiero que funcione el login a lockear al admin).
-- **Sin salt hardcodeado**: ADMIN_SALT del diseño anterior desaparece
-  — los session IDs son random puros, no hay hash que saltear.
+  abajo.
 
 Proxy (`src/proxy.ts`, corre en **Edge** — antes `middleware.ts`,
 renombrado por Next.js 16):
@@ -800,17 +803,21 @@ renombrado por Next.js 16):
 - Lista blanca de paths exentos: `/admin/login`, `/api/admin/login`,
   `/api/admin/descargas/upload` (último recibe webhooks firmados de
   Blob sin cookie — handleUpload verifica signature).
-- Para todo lo demás: lookup del session ID en Redis. Si no existe o
-  Redis no responde → reject.
+- Para tokens fallback (`"fallback:"`): valida HMAC con `crypto.subtle`
+  (Web Crypto, disponible en Edge Runtime). No toca Redis.
+- Para session IDs normales: lookup en Redis. Si no existe → reject.
+  Si Redis caído → fail-open.
 - Rechazo diferenciado: páginas HTML → 307 redirect a `/admin/login`;
-  APIs (`/api/*`) → 401 JSON (para que clients no parseen HTML como
-  JSON silenciosamente).
-- **Bug histórico corregido**: antes la condición
-  `if (!pathname.startsWith("/admin"))` dejaba `/api/admin/*` sin
-  auth (empieza con `/api`). Ahora está con whitelist explícita.
+  APIs (`/api/*`) → 401 JSON.
 
 Si se sospecha de sesión comprometida: borrar las keys `admin:session:*`
-desde el dashboard de Upstash → invalida todos los logins activos.
+desde el dashboard de Upstash → invalida todos los logins activos
+(los tokens fallback sólo se pueden invalidar cambiando `ADMIN_PASSWORD`).
+
+**Causa común de "Error del servidor" en el login**: Upstash pausa las
+bases de datos gratuitas por inactividad. Solución: ir al dashboard de
+Upstash → Resume. Después del primer request, la base vuelve a estar
+activa. El fallback HMAC permite entrar aunque Redis siga pausado.
 
 ### Defensa en profundidad — route group `(protected)`
 
