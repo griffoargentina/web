@@ -8,18 +8,18 @@ import type { NextRequest } from "next/server";
  *
  * Guard de /admin/* y /api/admin/*.
  *
- * Valida la cookie contra Redis (sesiones reales, revocables). Si no
- * hay cookie válida:
- *   - Para páginas HTML: redirect a /admin/login?from=...
- *   - Para APIs: 401 JSON (un cliente esperando JSON parseando el HTML
- *     del login rompe todo silenciosamente).
+ * Soporta dos tipos de cookie:
+ *  1. Session ID hex (Redis-backed): validado contra Redis.
+ *  2. Token HMAC firmado (fallback cuando Redis no está): empieza
+ *     con "fallback:", verificado con ADMIN_PASSWORD via Web Crypto.
  *
- * Corre en Edge Runtime — por eso usamos @upstash/redis (HTTP REST),
- * no `crypto` de Node.
+ * Corre en Edge Runtime — se usa @upstash/redis (HTTP REST) y
+ * crypto.subtle (Web Crypto API) en vez de módulos de Node.
  */
 
 const COOKIE_NAME = "griffo-admin-session";
 const SESSION_KEY_PREFIX = "admin:session:";
+const FALLBACK_PREFIX = "fallback:";
 
 /**
  * Rutas exentas del guard.
@@ -27,7 +27,6 @@ const SESSION_KEY_PREFIX = "admin:session:";
  * - /admin/login y /api/admin/login: la pantalla y endpoint de login.
  * - /api/admin/descargas/upload: recibe webhooks firmados desde Vercel
  *   Blob sin cookie. handleUpload verifica la signature internamente.
- * - /api/admin/debug-password: diagnóstico temporal de ADMIN_PASSWORD.
  */
 const EXEMPT_PATHS = [
   "/admin/login",
@@ -39,8 +38,39 @@ const EXEMPT_PATHS = [
 
 function isExempt(pathname: string): boolean {
   return EXEMPT_PATHS.some(
-    (p) => pathname === p || pathname.startsWith(p + "/")
+    (p) => pathname === p || pathname.startsWith(p + "/"),
   );
+}
+
+async function verifyFallbackTokenEdge(
+  token: string,
+  password: string,
+): Promise<boolean> {
+  if (!token.startsWith(FALLBACK_PREFIX)) return false;
+  try {
+    const raw = token.slice(FALLBACK_PREFIX.length);
+    // atob disponible en Edge Runtime
+    const decoded = atob(raw);
+    const parsed = JSON.parse(decoded) as { exp: unknown; sig: unknown };
+    if (typeof parsed.exp !== "number" || typeof parsed.sig !== "string") return false;
+    if (Date.now() > parsed.exp) return false;
+
+    const payload = `griffo-admin-fallback:${parsed.exp}`;
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      enc.encode(password),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["verify"],
+    );
+    const sigBytes = new Uint8Array(
+      (parsed.sig.match(/.{2}/g) ?? []).map((b: string) => parseInt(b, 16)),
+    );
+    return await crypto.subtle.verify("HMAC", key, sigBytes, enc.encode(payload));
+  } catch {
+    return false;
+  }
 }
 
 export async function proxy(request: NextRequest) {
@@ -59,6 +89,14 @@ export async function proxy(request: NextRequest) {
 
   if (!sessionId) {
     return unauthorized(request, pathname);
+  }
+
+  // Fallback: token HMAC firmado (sin Redis)
+  if (sessionId.startsWith(FALLBACK_PREFIX)) {
+    const password = process.env.ADMIN_PASSWORD ?? "";
+    const valid = await verifyFallbackTokenEdge(sessionId, password);
+    if (!valid) return unauthorized(request, pathname);
+    return NextResponse.next();
   }
 
   // Validar sesión en Redis
