@@ -821,6 +821,11 @@ bases de datos gratuitas por inactividad. Solución: ir al dashboard de
 Upstash → Resume. Después del primer request, la base vuelve a estar
 activa. El fallback HMAC permite entrar aunque Redis siga pausado.
 
+**Diagnóstico de login**: `GET /api/admin/debug-password` (exento de auth,
+whitelist del proxy) devuelve `{password:{isSet,trimmedLength,...}, redis:{status,error}}`.
+Útil para ver si el problema es ADMIN_PASSWORD ausente o Redis caído sin
+necesitar acceso al admin ni a Vercel logs.
+
 ### Defensa en profundidad — route group `(protected)`
 
 El proxy edge no alcanza como única capa. Los docs de Next dicen
