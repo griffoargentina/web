@@ -84,27 +84,32 @@ export async function createSession(meta?: {
   const store = await cookies();
 
   if (redis) {
-    const sessionId = randomBytes(32).toString("hex");
-    await redis.set(
-      SESSION_KEY_PREFIX + sessionId,
-      JSON.stringify({
-        createdAt: Date.now(),
-        userAgent: meta?.userAgent,
-        ip: meta?.ip,
-      }),
-      { ex: SESSION_TTL_SECONDS },
-    );
-    store.set(ADMIN_COOKIE_NAME, sessionId, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: COOKIE_MAX_AGE,
-    });
-    return sessionId;
+    try {
+      const sessionId = randomBytes(32).toString("hex");
+      await redis.set(
+        SESSION_KEY_PREFIX + sessionId,
+        JSON.stringify({
+          createdAt: Date.now(),
+          userAgent: meta?.userAgent,
+          ip: meta?.ip,
+        }),
+        { ex: SESSION_TTL_SECONDS },
+      );
+      store.set(ADMIN_COOKIE_NAME, sessionId, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: COOKIE_MAX_AGE,
+      });
+      return sessionId;
+    } catch (e) {
+      // Redis configurado pero no responde (ej. Upstash pausado) → fallback
+      console.error("[admin-auth] Redis.set falló, usando sesión de fallback:", e);
+    }
   }
 
-  // Redis no disponible: sesión firmada como fallback (no revocable).
+  // Fallback: sesión firmada (Redis no disponible o no responde).
   console.warn("[admin-auth] Redis no disponible — sesión de fallback firmada");
   const exp = Date.now() + SESSION_TTL_SECONDS * 1000;
   const cookieValue = await signFallbackToken(exp);
