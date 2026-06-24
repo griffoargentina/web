@@ -786,12 +786,14 @@ Diseño actual (`src/lib/admin-auth.ts`):
   random de 32 bytes hex. Store: key `admin:session:<id>` en Upstash
   Redis con TTL. Metadata: `createdAt`, `userAgent`, `ip`. Logout borra
   la entry → cookie queda inútil aunque se la roben.
-- **Modo fallback (Redis no disponible)**: cookie empieza con `"fallback:"`
-  seguido de un token HMAC-SHA256 firmado con `ADMIN_PASSWORD` y un
-  timestamp de expiración. No es revocable por sesión, pero es seguro
-  mientras `ADMIN_PASSWORD` sea secreto. El sistema lo activa
-  automáticamente — sin cambios de código ni intervención manual.
-  Cuando Redis vuelva, el próximo login genera una sesión Redis normal.
+- **Modo fallback (Redis no disponible o con error)**: cookie empieza con
+  `"fallback:"` seguido de un token HMAC-SHA256 firmado con `ADMIN_PASSWORD`
+  y un timestamp de expiración. Se activa en dos casos: (a) env vars de Redis
+  ausentes → `getRedis()` devuelve null; (b) Redis configurado pero la
+  operación `redis.set()` falla (ej. Upstash pausado, timeout de red). No es
+  revocable por sesión, pero es seguro mientras `ADMIN_PASSWORD` sea secreto.
+  El sistema lo activa automáticamente. Cuando Redis vuelva, el próximo login
+  genera una sesión Redis normal.
 - **Verificación de password**: `timingSafeEqual` de `node:crypto`.
 - **Rate limit en `/api/admin/login`**: 5 intentos por IP por minuto
   (counter Redis con TTL). Al 6º → `429`. Fail-open si Redis está
