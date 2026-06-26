@@ -579,6 +579,11 @@ params con brackets, usar **`https` nativo de Node + `zlib.gunzip`**, NUNCA
   corresponde a un destacado, `redirect()` server-side a `/productos/[slug]`.
 - `/api/catalog/products` — devuelve productos con `_searchText` pre-computado.
 - `/api/catalog/plate?plate=XXX` — identifica vehículo por patente.
+  Protegido con tres capas: (1) validación de formato argentino estricta
+  (ABC123 vieja o AB123CD Mercosur) antes de tocar SpecParts; (2) rate
+  limit por IP 5 req/min en Redis (fail-open); (3) caché Redis 7 días
+  por patente. Sin esto, los bots quemaban el cupo hourly de SpecParts
+  afectando a otros clientes del mismo API key.
 
 ### Búsqueda — 5 tabs
 
