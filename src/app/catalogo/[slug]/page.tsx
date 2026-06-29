@@ -311,18 +311,18 @@ function getAttrDisplayLabel(name: string, isTope: boolean): string | null {
     return "DIÁMETRO INTERNO TOPE";
   }
   if (n === "largo tope" || n === "long. tope" || n === "altura libre" || n === "altura") {
-    return "LARGO DE TOPE";
+    return "LARGO TOPE";
   }
 
   // Atributos ambiguos — resueltos por contexto (isTope)
   if (n === "diámetro menor" || n === "diam. menor" || n === "boca menor") {
-    return isTope ? "DIÁMETRO INTERNO TOPE" : "DIÁMETRO INTERNO FUELLE";
+    return isTope ? "DIÁMETRO INTERNO TOPE" : "DIÁMETRO MENOR FUELLE";
   }
   if (n === "diámetro mayor" || n === "diam. mayor" || n === "boca mayor") {
-    return "DIÁMETRO EXTERNO FUELLE";
+    return "DIÁMETRO MAYOR FUELLE";
   }
   if (n === "largo" || n === "largo fuelle" || n === "long. fuelle") {
-    return isTope ? "LARGO DE TOPE" : "LARGO FUELLE";
+    return isTope ? "LARGO TOPE" : "LARGO FUELLE";
   }
 
   return name;
