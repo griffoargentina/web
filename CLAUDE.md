@@ -591,6 +591,11 @@ params con brackets, usar **`https` nativo de Node + `zlib.gunzip`**, NUNCA
   texto "429" que el endpoint detecta y convierte en 503 con mensaje
   "Servicio temporalmente no disponible" — distingue throttling de SpecParts
   de una patente genuinamente no encontrada.
+  Cada consulta real a SpecParts guarda el estado en Redis
+  (`plate:last-status`, TTL 48h): `{ok, throttled, at}`. El dashboard
+  del admin (`runHealthChecks`) lee esta key para mostrar un semáforo
+  "Búsqueda por patente" sin consumir cupo de la API — verde si la
+  última consulta fue exitosa, rojo si SpecParts devolvió 429.
 
 ### Búsqueda — 5 tabs
 
@@ -1385,7 +1390,10 @@ Tres capas para enterarse si algo se rompe:
 1. **`/admin` dashboard** (visual, on-demand) — semáforos de servicios
    en vivo (`runHealthChecks` en `admin-health.ts`) + alertas de config
    (`findConfigAlerts` en `admin-alerts.ts`) + log de errores
-   (`readAdminErrors`, últimos 100 en Redis). La cliente entra a la
+   (`readAdminErrors`, últimos 100 en Redis). Semáforos: SpecParts
+   (catálogo), Búsqueda por patente (lee `plate:last-status` en Redis —
+   verde/rojo sin consumir cupo de la API), Base de datos, Blob, Resend,
+   ERP Bejerman. La cliente entra a la
    pantalla y ve estado en 2 segundos.
 2. **Email automático de Vercel** — Vercel manda email cuando un
    deploy falla, un cron devuelve 5xx, o hay problema de DNS/SSL.
