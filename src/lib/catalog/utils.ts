@@ -501,6 +501,7 @@ export function buildSuspensionMeasureRows(
           : "");
 
       const largoTopeRaw =
+        getAttrValue(p, "largo de tope") ||
         getAttrValue(p, "largo tope") ||
         getAttrValue(p, "long. tope") ||
         getAttrValue(p, "altura libre") ||

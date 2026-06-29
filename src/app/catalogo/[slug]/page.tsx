@@ -310,7 +310,7 @@ function getAttrDisplayLabel(name: string, isTope: boolean): string | null {
   if (/diámetro int[e]?rior|diámetro intern|diam\. int[e]?rior|diam\. intern|diám\. int|d\. interno/.test(n)) {
     return "DIÁMETRO INTERNO TOPE";
   }
-  if (n === "largo tope" || n === "long. tope" || n === "altura libre" || n === "altura") {
+  if (n === "largo de tope" || n === "largo tope" || n === "long. tope" || n === "altura libre" || n === "altura") {
     return "LARGO TOPE";
   }
 
