@@ -581,9 +581,13 @@ params con brackets, usar **`https` nativo de Node + `zlib.gunzip`**, NUNCA
 - `/api/catalog/plate?plate=XXX` — identifica vehículo por patente.
   Protegido con tres capas: (1) validación de formato argentino estricta
   (ABC123 vieja o AB123CD Mercosur) antes de tocar SpecParts; (2) rate
-  limit por IP 5 req/min en Redis (fail-open); (3) caché Redis 7 días
+  limit por IP 10 req/min en Redis (fail-open); (3) caché Redis 7 días
   por patente. Sin esto, los bots quemaban el cupo hourly de SpecParts
   afectando a otros clientes del mismo API key.
+  Caché diferenciado: 7 días si SpecParts encontró el vehículo (`brand`
+  presente), 1 hora si no lo encontró — evita que un resultado vacío
+  por throttling momentáneo quede pegado días. Clave `plate:v2:` (v1
+  cacheaba resultados vacíos sin distinción).
 
 ### Búsqueda — 5 tabs
 
