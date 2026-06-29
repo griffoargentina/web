@@ -950,13 +950,20 @@ Grupos:
   `components/admin/CatalogoImagenesManager.tsx`.
 - `/admin/catalogo-backup` — **Backup diario del catálogo SpecParts**.
   Cron en `vercel.json` (`0 4 * * *`) genera snapshot diario
-  (JSON + Excel con 3 hojas: Productos, Vehículos, Atributos) y lo
+  (JSON + Excel con 4 hojas: Productos, Vehículos, Atributos, **Base**) y lo
   sube a Vercel Blob. Metadata en Redis
   (`catalog-backup:snapshots`, array de últimas 30 entradas).
   Admin puede regenerar a mano y descargar cualquier snapshot del
   historial. **Además funciona como fallback**: `listCatalog()` cae
   al último snapshot si SpecParts no responde (ver nivel 4 del cache
   chain en `src/lib/api/specparts.ts`). Lib: `src/lib/catalog-backup.ts`.
+  La hoja **Base** es una matriz vehículo × tipo de producto (14 columnas
+  fijas, freeze en J7, 6 filas de encabezado con colores por sistema):
+  Dirección (fuelle cremallera DER/IZQ), Suspensión (kit+tope y tope
+  DEL/TRA) y Transmisión (fuelle/kit semieje × DER/IZQ × CAJA/RUEDA).
+  Cada celda con código tiene fondo verde claro + negrita; celdas vacías
+  sin relleno. Clasificación en `getProductBaseColIndex()` usando
+  `getDisplayApplication()`. First-wins por vehículo+columna.
   Sección **"Probar crons"** abajo del historial: dispara los 3 cron
   jobs server-to-server con el CRON_SECRET real
   (`/api/admin/cron-test`) y muestra status code + body de cada uno.
