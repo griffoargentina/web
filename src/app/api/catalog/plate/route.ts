@@ -111,6 +111,11 @@ export async function GET(request: Request) {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Error desconocido";
-    return NextResponse.json({ error: message }, { status: 500 });
+    // 429 de SpecParts: cupo agotado por bots previos, no es error nuestro
+    const isThrottle = message.includes("429");
+    return NextResponse.json(
+      { error: isThrottle ? "Servicio temporalmente no disponible. Intentá en unos minutos." : message },
+      { status: isThrottle ? 503 : 500 },
+    );
   }
 }

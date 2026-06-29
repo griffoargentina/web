@@ -89,6 +89,15 @@ function specpartsGet<T>(path: string, token: string): Promise<T> {
                 res.headers["content-encoding"] === "gzip"
                   ? (await gunzipAsync(buffer)).toString("utf8")
                   : buffer.toString("utf8");
+              const status = res.statusCode ?? 0;
+              if (status === 429) {
+                reject(new Error(`SpecParts rate limit (429): ${body.slice(0, 100)}`));
+                return;
+              }
+              if (status >= 400) {
+                reject(new Error(`SpecParts ${path} → ${status}: ${body.slice(0, 200)}`));
+                return;
+              }
               resolve(JSON.parse(body) as T);
             } catch (err) {
               reject(err);
