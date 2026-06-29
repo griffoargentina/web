@@ -734,11 +734,11 @@ Layout por prioridad de info (de más a menos relevante):
 4. CTA **MercadoLibre** (arriba del fold)
 5. Tabla compacta de medidas (divide-y, no cajas grandes). Los nombres
    crudos de SpecParts se mapean con `getAttrDisplayLabel()` (definida en
-   la propia página) antes de mostrarse: DIÁMETRO MENOR → DIÁMETRO INTERNO
-   FUELLE, DIÁMETRO MAYOR → DIÁMETRO EXTERNO FUELLE, LARGO → LARGO FUELLE
-   (o LARGO DE TOPE si el producto es tope-only), DIÁMETRO INTERIOR/INTERNO
-   → DIÁMETRO INTERNO TOPE, LARGO TOPE / ALTURA LIBRE / ALTURA → LARGO DE
-   TOPE. PLIEGUES se oculta siempre. Attrs ambiguos (largo, boca menor) se
+   la propia página) antes de mostrarse: DIÁMETRO MENOR → DIÁMETRO MENOR
+   FUELLE, DIÁMETRO MAYOR → DIÁMETRO MAYOR FUELLE, LARGO → LARGO FUELLE
+   (o LARGO TOPE si el producto es tope-only), DIÁMETRO INTERIOR/INTERNO
+   → DIÁMETRO INTERNO TOPE, LARGO TOPE / ALTURA LIBRE / ALTURA → LARGO TOPE.
+   PLIEGUES se oculta siempre. Attrs ambiguos (largo, boca menor) se
    resuelven por contexto (`isTope` = nombre del producto contiene "tope" sin
    "fuelle").
 6. Componentes del kit (si aplica) — inline
