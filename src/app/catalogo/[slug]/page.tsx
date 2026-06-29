@@ -73,7 +73,7 @@ export default async function ProductoCatalogoPage({ params }: { params: Params 
   // Transmisión en Ubicación sólo deja LADO CAJA / LADO RUEDA).
   const { ubicaciones, lados } = getDisplayApplication(product);
 
-  // Medidas: el resto de los atributos (diámetros, largos, pliegues, tipo, etc.).
+  // Medidas: el resto de los atributos (diámetros, largos, tipo, etc.).
   // Excluimos los que ya mostramos como Aplicación y los de 'Componentes'.
   const isAplicacion = (name: string) => {
     const n = name.toLowerCase();
@@ -81,9 +81,15 @@ export default async function ProductoCatalogoPage({ params }: { params: Params 
   };
   const isComponente = (name: string) => name.toLowerCase().includes("component");
 
-  const medidas = attributes.filter(
-    (a) => !isAplicacion(a.name) && !isComponente(a.name),
-  );
+  const isTope =
+    product.product.toLowerCase().includes("tope") &&
+    !product.product.toLowerCase().includes("fuelle");
+
+  const medidas = attributes
+    .filter((a) => !isAplicacion(a.name) && !isComponente(a.name))
+    .map((a) => ({ ...a, displayName: getAttrDisplayLabel(a.name, isTope) }))
+    .filter((a) => a.displayName !== null) as (SpecPartsAttribute & { displayName: string })[];
+
   const componenteAttr = attributes.find((a) => isComponente(a.name));
 
   return (
@@ -167,7 +173,7 @@ export default async function ProductoCatalogoPage({ params }: { params: Params 
               </h2>
               <dl className="divide-y divide-gray-100 rounded-lg border border-gray-100 bg-white">
                 {medidas.map((a, i) => (
-                  <MedidaRow key={`${a.name}-${i}`} attr={a} />
+                  <MedidaRow key={`${a.name}-${i}`} attr={a} label={a.displayName} />
                 ))}
               </dl>
             </section>
@@ -277,16 +283,49 @@ function Pill({ label, value }: { label: string; value: string }) {
   );
 }
 
-function MedidaRow({ attr }: { attr: SpecPartsAttribute }) {
+function MedidaRow({ attr, label }: { attr: SpecPartsAttribute; label: string }) {
   return (
     <div className="flex items-center justify-between gap-4 px-3 py-1.5 text-xs">
-      <dt className="uppercase tracking-wide text-gray-500">{attr.name}</dt>
+      <dt className="uppercase tracking-wide text-gray-500">{label}</dt>
       <dd className="text-right font-bold text-[#0a2b3d]">
         {attr.value}
         {attr.unit ? ` ${attr.unit}` : ""}
       </dd>
     </div>
   );
+}
+
+/**
+ * Mapea el nombre crudo del atributo de SpecParts al label de display.
+ * Devuelve null si el atributo debe ocultarse.
+ * `isTope` = el producto es un Tope sin Fuelle (para desambiguar "largo" y "boca menor").
+ */
+function getAttrDisplayLabel(name: string, isTope: boolean): string | null {
+  const n = name.toLowerCase().trim();
+
+  // Ocultar siempre
+  if (n.includes("pliegue")) return null;
+
+  // Atributos de tope — nombres específicos (no ambiguos)
+  if (/diámetro int[e]?rior|diámetro intern|diam\. int[e]?rior|diam\. intern|diám\. int|d\. interno/.test(n)) {
+    return "DIÁMETRO INTERNO TOPE";
+  }
+  if (n === "largo tope" || n === "long. tope" || n === "altura libre" || n === "altura") {
+    return "LARGO DE TOPE";
+  }
+
+  // Atributos ambiguos — resueltos por contexto (isTope)
+  if (n === "diámetro menor" || n === "diam. menor" || n === "boca menor") {
+    return isTope ? "DIÁMETRO INTERNO TOPE" : "DIÁMETRO INTERNO FUELLE";
+  }
+  if (n === "diámetro mayor" || n === "diam. mayor" || n === "boca mayor") {
+    return "DIÁMETRO EXTERNO FUELLE";
+  }
+  if (n === "largo" || n === "largo fuelle" || n === "long. fuelle") {
+    return isTope ? "LARGO DE TOPE" : "LARGO FUELLE";
+  }
+
+  return name;
 }
 
 function groupVehiclesByBrand(vehicles: SpecPartsVehicle[]): Record<string, SpecPartsVehicle[]> {
