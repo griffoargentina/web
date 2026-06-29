@@ -41,7 +41,7 @@ import ExcelJS from "exceljs";
 import { listCatalog } from "@/lib/api/specparts";
 import { getDisplayApplication } from "@/lib/catalog/display";
 import { getRedis } from "@/lib/kv";
-import type { CatalogProduct } from "@/types/specparts";
+import type { CatalogProduct, SpecPartsVehicle } from "@/types/specparts";
 
 const META_KEY = "catalog-backup:snapshots";
 const MAX_SNAPSHOTS = 30;
@@ -157,10 +157,11 @@ export async function regenerateCatalogSnapshot(): Promise<CatalogSnapshot> {
 /* -------------------------------------------------------------------------- */
 
 /**
- * 3 hojas denormalizadas para que el Excel sea útil:
+ * 4 hojas denormalizadas para que el Excel sea útil:
  *   - Productos: 1 fila por producto (core fields + conteos).
  *   - Vehículos: 1 fila por par producto×vehículo compatible.
  *   - Atributos: 1 fila por par producto×atributo.
+ *   - Base: vehículo × tipo de producto (matriz de cobertura).
  *
  * Cualquiera de las tres basta para re-importar el catálogo en otro
  * sistema si el proveedor original deja de funcionar.
@@ -259,6 +260,9 @@ async function buildXlsx(products: CatalogProduct[]): Promise<Buffer> {
   attrSheet.views = [{ state: "frozen", ySplit: 1 }];
   attrSheet.autoFilter = { from: "A1", to: "D1" };
 
+  /* --- Sheet 4: Base --- */
+  addBaseSheet(wb, products);
+
   const arrayBuffer = await wb.xlsx.writeBuffer();
   return Buffer.from(arrayBuffer);
 }
@@ -273,4 +277,268 @@ function styleHeader(sheet: ExcelJS.Worksheet): void {
   };
   header.alignment = { vertical: "middle" };
   header.height = 20;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Sheet 4: Base — vehículo × tipo de producto                               */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Mapea un producto a una de las 14 columnas de la hoja "Base".
+ * Retorna null si el producto no cae en ninguna columna (máquinas, etc.).
+ *
+ *  1  Fuelle cremallera    Dirección  DER
+ *  2  Fuelle cremallera    Dirección  IZQ
+ *  3  Kit fuelle+tope      Suspensión DEL
+ *  4  Kit fuelle+tope      Suspensión TRA
+ *  5  Tope amortiguador    Suspensión DEL
+ *  6  Tope amortiguador    Suspensión TRA
+ *  7  Fuelle semieje       Transm.    DER / CAJA
+ *  8  Fuelle semieje       Transm.    DER / RUEDA
+ *  9  Fuelle semieje       Transm.    IZQ / CAJA
+ * 10  Fuelle semieje       Transm.    IZQ / RUEDA
+ * 11  Kit fuelle semieje   Transm.    DER / CAJA
+ * 12  Kit fuelle semieje   Transm.    DER / RUEDA
+ * 13  Kit fuelle semieje   Transm.    IZQ / CAJA
+ * 14  Kit fuelle semieje   Transm.    IZQ / RUEDA
+ */
+function getProductBaseColIndex(p: CatalogProduct): number | null {
+  const cat = (p.category || "").toLowerCase();
+  const name = p.product.toUpperCase();
+  const isKit = p.is_kit === 1 || name.includes("KIT");
+
+  // getDisplayApplication normaliza las ubicaciones/lados por línea:
+  //   Dirección:  ubicaciones incluye DERECHO/IZQUIERDO (promovidos desde lado)
+  //   Suspensión: ubicaciones incluye DELANTERO/TRASERO
+  //   Transmisión: ubicaciones incluye LADO CAJA/LADO RUEDA; lados incluye DER/IZQ
+  const { ubicaciones, lados } = getDisplayApplication(p);
+  const ubs = ubicaciones.map((s) => s.toUpperCase());
+  const lds = lados.map((s) => s.toUpperCase());
+
+  if (cat.includes("direc")) {
+    if (ubs.some((s) => s.startsWith("DERECH"))) return 1;
+    if (ubs.some((s) => s.startsWith("IZQUIER"))) return 2;
+    return null;
+  }
+
+  if (cat.includes("susp")) {
+    const isDel = ubs.some((s) => s.startsWith("DELANT"));
+    const isTra = ubs.some((s) => s.startsWith("TRASER"));
+    const isTope = name.includes("TOPE") && !name.includes("FUELLE");
+    if (isKit) return isDel ? 3 : isTra ? 4 : null;
+    if (isTope) return isDel ? 5 : isTra ? 6 : null;
+    return null;
+  }
+
+  if (cat.includes("trans")) {
+    const isCaja = ubs.some((s) => s.includes("CAJA"));
+    const isRueda = ubs.some((s) => s.includes("RUEDA"));
+    const isDer = lds.some((s) => s.startsWith("DERECH"));
+    const isIzq = lds.some((s) => s.startsWith("IZQUIER"));
+    if (!isKit) {
+      if (isDer && isCaja) return 7;
+      if (isDer && isRueda) return 8;
+      if (isIzq && isCaja) return 9;
+      if (isIzq && isRueda) return 10;
+    } else {
+      if (isDer && isCaja) return 11;
+      if (isDer && isRueda) return 12;
+      if (isIzq && isCaja) return 13;
+      if (isIzq && isRueda) return 14;
+    }
+  }
+
+  return null;
+}
+
+function addBaseSheet(wb: ExcelJS.Workbook, products: CatalogProduct[]): void {
+  const ws = wb.addWorksheet("Base");
+
+  const PROD_START = 10; // Column J (1-based)
+  const N_PROD = 14;
+  const N_HEADER = 6;
+
+  const C_DIR = "FF00B050"; // green  — Dirección
+  const C_SUS = "FF4472C4"; // blue   — Suspensión
+  const C_TRA = "FFC65911"; // brown  — Transmisión
+  const C_VEH = "FF00549F"; // Griffo blue — vehicle column labels
+  const C_CODE = "FFE2EFDA"; // light green — cells with a product code
+
+  type ColSpec = {
+    sistema: string;
+    pieza: string;
+    posicion: string;
+    lado: string;
+    color: string;
+  };
+  const COLS: ColSpec[] = [
+    { sistema: "Dirección",   pieza: "Fuelle cremallera",  posicion: "",      lado: "DER", color: C_DIR },
+    { sistema: "Dirección",   pieza: "Fuelle cremallera",  posicion: "",      lado: "IZQ", color: C_DIR },
+    { sistema: "Suspensión",  pieza: "Kit fuelle+tope",    posicion: "DEL",   lado: "",    color: C_SUS },
+    { sistema: "Suspensión",  pieza: "Kit fuelle+tope",    posicion: "TRA",   lado: "",    color: C_SUS },
+    { sistema: "Suspensión",  pieza: "Tope amortiguador",  posicion: "DEL",   lado: "",    color: C_SUS },
+    { sistema: "Suspensión",  pieza: "Tope amortiguador",  posicion: "TRA",   lado: "",    color: C_SUS },
+    { sistema: "Transmisión", pieza: "Fuelle semieje",     posicion: "CAJA",  lado: "DER", color: C_TRA },
+    { sistema: "Transmisión", pieza: "Fuelle semieje",     posicion: "RUEDA", lado: "DER", color: C_TRA },
+    { sistema: "Transmisión", pieza: "Fuelle semieje",     posicion: "CAJA",  lado: "IZQ", color: C_TRA },
+    { sistema: "Transmisión", pieza: "Fuelle semieje",     posicion: "RUEDA", lado: "IZQ", color: C_TRA },
+    { sistema: "Transmisión", pieza: "Kit fuelle semieje", posicion: "CAJA",  lado: "DER", color: C_TRA },
+    { sistema: "Transmisión", pieza: "Kit fuelle semieje", posicion: "RUEDA", lado: "DER", color: C_TRA },
+    { sistema: "Transmisión", pieza: "Kit fuelle semieje", posicion: "CAJA",  lado: "IZQ", color: C_TRA },
+    { sistema: "Transmisión", pieza: "Kit fuelle semieje", posicion: "RUEDA", lado: "IZQ", color: C_TRA },
+  ];
+
+  // Column widths: A-F vehicle, G-I narrow separator, J-W product cols
+  [16, 20, 24, 18, 10, 10].forEach((w, i) => { ws.getColumn(i + 1).width = w; });
+  for (let i = 7; i <= 9; i++) ws.getColumn(i).width = 2;
+  for (let i = 0; i < N_PROD; i++) ws.getColumn(PROD_START + i).width = 13;
+
+  function hdrCell(cell: ExcelJS.Cell, color: string, value: string | number): void {
+    cell.value = value;
+    cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 9 };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: color } };
+    cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+  }
+
+  // Row 1 — Column numbers 1–14
+  {
+    const row = ws.getRow(1);
+    row.height = 18;
+    for (let i = 0; i < N_PROD; i++) hdrCell(row.getCell(PROD_START + i), COLS[i].color, i + 1);
+    row.commit();
+  }
+
+  // Row 2 — Sistema (merged per system)
+  {
+    const row = ws.getRow(2);
+    row.height = 28;
+    for (const g of [
+      { label: "Dirección",   s: 0,  e: 1,  c: C_DIR },
+      { label: "Suspensión",  s: 2,  e: 5,  c: C_SUS },
+      { label: "Transmisión", s: 6,  e: 13, c: C_TRA },
+    ]) {
+      const sc = PROD_START + g.s, ec = PROD_START + g.e;
+      ws.mergeCells(2, sc, 2, ec);
+      hdrCell(row.getCell(sc), g.c, g.label);
+    }
+    row.commit();
+  }
+
+  // Row 3 — Pieza (merged per piece group)
+  {
+    const row = ws.getRow(3);
+    row.height = 28;
+    for (const g of [
+      { label: "Fuelle cremallera",  s: 0,  e: 1,  c: C_DIR },
+      { label: "Kit fuelle+tope",    s: 2,  e: 3,  c: C_SUS },
+      { label: "Tope amortiguador",  s: 4,  e: 5,  c: C_SUS },
+      { label: "Fuelle semieje",     s: 6,  e: 9,  c: C_TRA },
+      { label: "Kit fuelle semieje", s: 10, e: 13, c: C_TRA },
+    ]) {
+      const sc = PROD_START + g.s, ec = PROD_START + g.e;
+      ws.mergeCells(3, sc, 3, ec);
+      hdrCell(row.getCell(sc), g.c, g.label);
+    }
+    row.commit();
+  }
+
+  // Row 4 — Marca (merged per system, all GRIFFO)
+  {
+    const row = ws.getRow(4);
+    row.height = 22;
+    for (const g of [
+      { s: 0,  e: 1,  c: C_DIR },
+      { s: 2,  e: 5,  c: C_SUS },
+      { s: 6,  e: 13, c: C_TRA },
+    ]) {
+      const sc = PROD_START + g.s, ec = PROD_START + g.e;
+      ws.mergeCells(4, sc, 4, ec);
+      hdrCell(row.getCell(sc), g.c, "GRIFFO");
+    }
+    row.commit();
+  }
+
+  // Row 5 — Posición
+  {
+    const row = ws.getRow(5);
+    row.height = 22;
+    for (let i = 0; i < N_PROD; i++) {
+      hdrCell(row.getCell(PROD_START + i), COLS[i].color, COLS[i].posicion);
+    }
+    row.commit();
+  }
+
+  // Row 6 — Vehicle column labels (A-F) + Lado (J-W)
+  {
+    const row = ws.getRow(6);
+    row.height = 24;
+    const vehLabels = ["Marca", "Modelo base", "Modelo", "Versión", "Año desde", "Año hasta"];
+    for (let i = 0; i < vehLabels.length; i++) {
+      const cell = row.getCell(i + 1);
+      cell.value = vehLabels[i];
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: C_VEH } };
+      cell.alignment = { vertical: "middle" };
+    }
+    for (let i = 0; i < N_PROD; i++) {
+      hdrCell(row.getCell(PROD_START + i), COLS[i].color, COLS[i].lado);
+    }
+    row.commit();
+  }
+
+  // Build vehicle → product-code map (first-wins per column)
+  type VehicleEntry = { v: SpecPartsVehicle; codes: Map<number, string> };
+  const vehicleMap = new Map<string, VehicleEntry>();
+
+  for (const p of products) {
+    const colIdx = getProductBaseColIndex(p);
+    if (colIdx === null) continue;
+    for (const v of p.vehicles ?? []) {
+      const key = [
+        v.brand, v.master_model, v.model, v.version,
+        v.sold_from_year, v.sold_until_year,
+      ].join("||");
+      if (!vehicleMap.has(key)) vehicleMap.set(key, { v, codes: new Map() });
+      const entry = vehicleMap.get(key)!;
+      if (!entry.codes.has(colIdx)) entry.codes.set(colIdx, p.code);
+    }
+  }
+
+  // Sort: brand → master_model → model → version → year_from
+  const sorted = Array.from(vehicleMap.values()).sort((a, b) => {
+    const x = a.v, y = b.v;
+    return (
+      (x.brand || "").localeCompare(y.brand || "") ||
+      (x.master_model || "").localeCompare(y.master_model || "") ||
+      (x.model || "").localeCompare(y.model || "") ||
+      (x.version || "").localeCompare(y.version || "") ||
+      (x.sold_from_year || 0) - (y.sold_from_year || 0)
+    );
+  });
+
+  // Data rows starting at row 7
+  for (let i = 0; i < sorted.length; i++) {
+    const { v, codes } = sorted[i];
+    const row = ws.getRow(N_HEADER + 1 + i);
+    row.getCell(1).value = v.brand;
+    row.getCell(2).value = v.master_model;
+    row.getCell(3).value = v.model;
+    row.getCell(4).value = v.version;
+    row.getCell(5).value = v.sold_from_year;
+    row.getCell(6).value = v.sold_until_year;
+    for (let c = 1; c <= N_PROD; c++) {
+      const code = codes.get(c);
+      if (code) {
+        const cell = row.getCell(PROD_START + c - 1);
+        cell.value = code;
+        cell.font = { bold: true, size: 9 };
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: C_CODE } };
+        cell.alignment = { horizontal: "center", vertical: "middle" };
+      }
+    }
+    row.commit();
+  }
+
+  // Freeze: columns A-I (9 cols) and rows 1-6 (6 header rows)
+  ws.views = [{ state: "frozen", xSplit: 9, ySplit: 6, topLeftCell: "J7", activeCell: "J7" }];
 }
