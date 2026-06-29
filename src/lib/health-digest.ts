@@ -22,6 +22,7 @@
 import "server-only";
 
 import { findConfigAlerts, type Alert } from "@/lib/admin-alerts";
+import { getCatalogSummary, type CatalogSummary } from "@/lib/admin-catalog-issues";
 import { runHealthChecks, type HealthCheck } from "@/lib/admin-health";
 import { readAdminErrors, type AdminErrorEntry } from "@/lib/admin-log";
 import { readSnapshots, type CatalogSnapshot } from "@/lib/catalog-backup";
@@ -65,6 +66,7 @@ export type DigestSummary = {
   snapshotsLast7Days: { date: string; productCount: number }[];
   snapshotsExpected: number;
   snapshotsMissing: number;
+  catalog: CatalogSummary | null;
 };
 
 /** Junta toda la data del digest. Read-only — no muta nada. */
@@ -74,7 +76,7 @@ export async function buildDigestSummary(): Promise<DigestSummary> {
 
   // Run en paralelo lo que se pueda (algunos checks pegan a externos
   // y son lentos — Promise.allSettled para no caer todo si uno explota).
-  const [health, alertsArr, errors, snapshots, leadsByKind] = await Promise.all([
+  const [health, alertsArr, errors, snapshots, leadsByKind, catalog] = await Promise.all([
     runHealthChecks().catch(() => []),
     Promise.resolve(findConfigAlerts()),
     readAdminErrors(100).catch(() => []),
@@ -85,6 +87,7 @@ export async function buildDigestSummary(): Promise<DigestSummary> {
         leads: await listLeads(kind).catch(() => [] as Lead[]),
       })),
     ),
+    getCatalogSummary().catch(() => null),
   ]);
 
   const leadsCounts = leadsByKind.map(({ kind, leads }) => ({
@@ -125,6 +128,7 @@ export async function buildDigestSummary(): Promise<DigestSummary> {
     snapshotsLast7Days,
     snapshotsExpected: 7,
     snapshotsMissing: Math.max(0, 7 - snapshotsLast7Days.length),
+    catalog,
   };
 }
 
@@ -212,6 +216,7 @@ function renderHtml(s: DigestSummary): string {
 
       ${renderHealthSection(s)}
       ${renderAlertsSection(s)}
+      ${renderCatalogSection(s)}
       ${renderLeadsSection(s)}
       ${renderSnapshotsSection(s)}
       ${renderErrorsSection(s)}
@@ -268,6 +273,58 @@ function renderAlertsSection(s: DigestSummary): string {
   return `
     <h2 style="font-size: 15px; margin: 24px 0 8px;">Alertas de configuración (${s.alerts.length})</h2>
     <ul style="margin: 0; padding-left: 18px;">${items}</ul>
+  `;
+}
+
+function renderCatalogSection(s: DigestSummary): string {
+  if (!s.catalog) {
+    return `
+      <h2 style="font-size: 15px; margin: 24px 0 8px;">Calidad del catálogo</h2>
+      <p style="margin: 0; color: #94a3b8; font-size: 13px;">No se pudo cargar el catálogo esta semana.</p>
+    `;
+  }
+  const c = s.catalog;
+
+  const problems: { label: string; count: number; severity: "warn" | "error" }[] = [
+    { label: "Sin foto", count: c.sinFoto, severity: "warn" },
+    { label: "Sin vehículos", count: c.sinVehiculos, severity: "warn" },
+    { label: "Sin atributos técnicos", count: c.sinAttributes, severity: "warn" },
+    { label: "Sin descripción", count: c.sinDescripcion, severity: "warn" },
+    { label: "Sin link MercadoLibre", count: c.sinMercadoLibre, severity: "warn" },
+    { label: "Discontinuados pero activos", count: c.discontinuadosPeroEnabled, severity: "error" },
+  ];
+
+  const rows = problems
+    .map((p) => {
+      const color = p.count === 0 ? "#16a34a" : p.severity === "error" ? "#dc2626" : "#d97706";
+      const icon = p.count === 0 ? "✓" : "⚠️";
+      return `
+      <tr>
+        <td style="padding: 6px; border-bottom: 1px solid #e5e7eb; font-size: 13px;">${icon} ${escape(p.label)}</td>
+        <td style="padding: 6px; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: bold; color: ${color};">${p.count}</td>
+      </tr>`;
+    })
+    .join("");
+
+  const sinMLCodes = c.sinMLList.slice(0, 10);
+  const mlBlock =
+    sinMLCodes.length > 0
+      ? `<p style="margin: 12px 0 4px; font-size: 13px; color: #475569;">
+           Productos activos sin link ML (primeros ${sinMLCodes.length}):
+         </p>
+         <p style="margin: 0; font-size: 12px; font-family: monospace; color: #0a2b3d; word-break: break-all;">
+           ${sinMLCodes.map((p) => escape(p.code)).join(" · ")}
+           ${c.sinMercadoLibre > 10 ? `<span style="color: #94a3b8;"> …y ${c.sinMercadoLibre - 10} más</span>` : ""}
+         </p>`
+      : "";
+
+  return `
+    <h2 style="font-size: 15px; margin: 24px 0 8px;">Calidad del catálogo (${c.total} productos)</h2>
+    <table style="width: 100%; border-collapse: collapse; font-size: 14px;">${rows}</table>
+    ${mlBlock}
+    <p style="margin: 8px 0 0; font-size: 12px; color: #94a3b8;">
+      Links ML se asignan en el admin de SpecParts → campo Links del producto.
+    </p>
   `;
 }
 
