@@ -624,9 +624,10 @@ params con brackets, usar **`https` nativo de Node + `zlib.gunzip`**, NUNCA
    - **Suspensión** (antes "Tope Amortiguador") = tabla unificada fuelles + topes con
      7 columnas: Ø Menor Fuelle, Ø Mayor Fuelle, Largo Fuelle, Ø Int. Tope, Largo Tope,
      Código, Foto. Fuelles solos: columnas de tope muestran `—`. Topes solos: columnas
-     de fuelle muestran `—`. Kits (hasTope detectado por atributos no-ambiguos):
-     columnas de tope se llenan si SpecParts las tiene (en la práctica, los kits en
-     SpecParts no tienen atributos de tope cargados → quedan `—`).
+     de fuelle muestran `—`. Kits: columnas de tope se llenan cuando SpecParts las tiene.
+     ⚠️ SpecParts llama al atributo `"LARGO DE TOPE"` (con "de"), no `"LARGO TOPE"`.
+     `buildSuspensionMeasureRows` busca `"largo de tope"` primero para evitar el
+     fallo de substring (largo tope ≠ substring de largo **de** tope).
    Sin sidebar de filtros.
 
 ### Filtros facetados (sidebar)
