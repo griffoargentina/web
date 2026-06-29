@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { identifyPlate } from "@/lib/api/specparts";
 import { getRedis } from "@/lib/kv";
+import type { SpecPartsPlateResponse } from "@/types/specparts";
 
 export const runtime = "nodejs";
 
@@ -12,10 +13,12 @@ export const runtime = "nodejs";
  */
 const PLATE_RE = /^([A-Z]{3}\d{3}|[A-Z]{2}\d{3}[A-Z]{2})$/;
 
-const CACHE_PREFIX = "plate:v1:";
-const CACHE_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 días — las patentes no cambian de vehículo seguido
+// v2: invalida resultados cacheados con la clave anterior (v1 cacheó respuestas vacías)
+const CACHE_PREFIX = "plate:v2:";
+const CACHE_TTL_HIT = 60 * 60 * 24 * 7; // 7 días si encontró el vehículo
+const CACHE_TTL_MISS = 60 * 60;          // 1 hora si la patente no está en SpecParts
 
-const RATE_LIMIT = 5; // máx 5 req por IP por ventana
+const RATE_LIMIT = 10; // máx 10 req por IP por ventana (era 5, muy restrictivo)
 const RATE_WINDOW_SECONDS = 60;
 
 function clientIp(req: Request): string {
@@ -25,7 +28,7 @@ function clientIp(req: Request): string {
 
 async function checkRateLimit(ip: string): Promise<boolean> {
   const redis = getRedis();
-  if (!redis) return true; // fail-open si no hay Redis
+  if (!redis) return true;
   const key = `ratelimit:plate:${ip}`;
   try {
     const count = (await redis.incr(key)) as number;
@@ -36,27 +39,31 @@ async function checkRateLimit(ip: string): Promise<boolean> {
   }
 }
 
-async function getFromCache(plate: string): Promise<unknown> {
+async function getFromCache(plate: string): Promise<SpecPartsPlateResponse | undefined> {
   const redis = getRedis();
   if (!redis) return undefined;
   try {
     const raw = await redis.get<string>(CACHE_PREFIX + plate);
     if (raw == null) return undefined;
-    return typeof raw === "string" ? JSON.parse(raw) : raw;
+    return typeof raw === "string"
+      ? (JSON.parse(raw) as SpecPartsPlateResponse)
+      : (raw as SpecPartsPlateResponse);
   } catch {
     return undefined;
   }
 }
 
-async function saveToCache(plate: string, data: unknown): Promise<void> {
+async function saveToCache(plate: string, data: SpecPartsPlateResponse): Promise<void> {
   const redis = getRedis();
   if (!redis) return;
+  // Solo cacheamos si SpecParts respondió algo (con o sin vehículo).
+  // TTL largo si encontró el vehículo; corto si no lo encontró (evita
+  // que un resultado vacío por throttling quede pegado 7 días).
+  const ttl = data.brand ? CACHE_TTL_HIT : CACHE_TTL_MISS;
   try {
-    await redis.set(CACHE_PREFIX + plate, JSON.stringify(data), {
-      ex: CACHE_TTL_SECONDS,
-    });
+    await redis.set(CACHE_PREFIX + plate, JSON.stringify(data), { ex: ttl });
   } catch {
-    /* ignorar — el cache es best-effort */
+    /* cache best-effort */
   }
 }
 
@@ -68,7 +75,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Falta patente" }, { status: 400 });
   }
 
-  // Validar formato antes de consumir cuota de SpecParts
   if (!PLATE_RE.test(plate)) {
     return NextResponse.json(
       { error: "Formato de patente inválido" },
@@ -76,7 +82,6 @@ export async function GET(request: Request) {
     );
   }
 
-  // Rate limit por IP — protege contra bots que generan patentes válidas
   const ip = clientIp(request);
   const allowed = await checkRateLimit(ip);
   if (!allowed) {
@@ -86,7 +91,6 @@ export async function GET(request: Request) {
     );
   }
 
-  // Caché Redis: misma patente no vuelve a pegar SpecParts
   const cached = await getFromCache(plate);
   if (cached !== undefined) {
     return NextResponse.json(cached, {
@@ -99,7 +103,6 @@ export async function GET(request: Request) {
 
   try {
     const data = await identifyPlate(plate);
-    // Guardamos el resultado (incluso null = patente no encontrada)
     await saveToCache(plate, data);
     return NextResponse.json(data, {
       headers: {
