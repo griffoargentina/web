@@ -31,8 +31,9 @@ export type HealthCheck = {
 };
 
 export async function runHealthChecks(): Promise<HealthCheck[]> {
-  const [sp, redis, blob, resend, bejerman] = await Promise.allSettled([
+  const [sp, plate, redis, blob, resend, bejerman] = await Promise.allSettled([
     checkSpecParts(),
+    checkPlateLookup(),
     checkRedis(),
     checkBlob(),
     checkResend(),
@@ -46,6 +47,13 @@ export async function runHealthChecks(): Promise<HealthCheck[]> {
       "Alimenta el catálogo y las novedades con los 370+ productos Griffo",
       "sitio",
       sp
+    ),
+    settledToCheck(
+      "plate-lookup",
+      "Búsqueda por patente",
+      "Identifica el vehículo desde la patente para filtrar productos en el catálogo",
+      "sitio",
+      plate
     ),
     settledToCheck(
       "redis",
@@ -182,6 +190,52 @@ async function checkResend(): Promise<CheckResult> {
     detail:
       "Mails salen desde contacto@griffo.com.ar (dominio griffo.com.ar verificado en Resend).",
   };
+}
+
+async function checkPlateLookup(): Promise<CheckResult> {
+  const redis = getRedis();
+  if (!redis) {
+    return {
+      status: "warn",
+      message: "Sin datos",
+      detail: "Redis no disponible — no se puede verificar el estado del endpoint de patente.",
+    };
+  }
+  try {
+    const raw = await redis.get<string>("plate:last-status");
+    if (!raw) {
+      return {
+        status: "warn",
+        message: "Sin consultas recientes",
+        detail: "No hubo búsquedas por patente en las últimas 48h — no se puede verificar. Si SpecParts está throttleado, aparecerá aquí en rojo la próxima vez que alguien busque.",
+      };
+    }
+    const parsed = (
+      typeof raw === "string" ? JSON.parse(raw) : raw
+    ) as { ok: boolean; throttled?: boolean; at: number };
+    const minsAgo = Math.round((Date.now() - parsed.at) / 60_000);
+    const timeLabel = minsAgo < 60
+      ? `hace ${minsAgo} min`
+      : `hace ${Math.round(minsAgo / 60)} h`;
+
+    if (parsed.throttled) {
+      return {
+        status: "error",
+        message: "Throttleada por SpecParts (429)",
+        detail: `Última consulta ${timeLabel} devolvió 429. Búsquedas por patente no disponibles hasta que SpecParts resetee el cupo de GRIFFO-ARG.`,
+      };
+    }
+    return {
+      status: "ok",
+      message: `Funcionando — última consulta exitosa ${timeLabel}`,
+    };
+  } catch (e) {
+    return {
+      status: "warn",
+      message: "No se pudo verificar",
+      detail: e instanceof Error ? e.message : String(e),
+    };
+  }
 }
 
 async function checkBejerman(): Promise<CheckResult> {

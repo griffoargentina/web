@@ -17,6 +17,21 @@ const PLATE_RE = /^([A-Z]{3}\d{3}|[A-Z]{2}\d{3}[A-Z]{2})$/;
 const CACHE_PREFIX = "plate:v3:";
 const CACHE_TTL_HIT = 60 * 60 * 24 * 7; // 7 días — solo si encontró el vehículo
 
+const PLATE_STATUS_KEY = "plate:last-status";
+const PLATE_STATUS_TTL = 60 * 60 * 48; // 48h
+
+async function saveLastPlateStatus(ok: boolean, throttled = false): Promise<void> {
+  const redis = getRedis();
+  if (!redis) return;
+  try {
+    await redis.set(
+      PLATE_STATUS_KEY,
+      JSON.stringify({ ok, throttled, at: Date.now() }),
+      { ex: PLATE_STATUS_TTL },
+    );
+  } catch { /* best-effort */ }
+}
+
 const RATE_LIMIT = 10; // máx 10 req por IP por ventana (era 5, muy restrictivo)
 const RATE_WINDOW_SECONDS = 60;
 
@@ -103,6 +118,7 @@ export async function GET(request: Request) {
   try {
     const data = await identifyPlate(plate);
     await saveToCache(plate, data);
+    saveLastPlateStatus(true).catch(() => {});
     return NextResponse.json(data, {
       headers: {
         "Cache-Control": "public, max-age=3600, s-maxage=86400",
@@ -113,6 +129,7 @@ export async function GET(request: Request) {
     const message = err instanceof Error ? err.message : "Error desconocido";
     // 429 de SpecParts: cupo agotado por bots previos, no es error nuestro
     const isThrottle = message.includes("429");
+    if (isThrottle) saveLastPlateStatus(false, true).catch(() => {});
     return NextResponse.json(
       { error: isThrottle ? "Servicio temporalmente no disponible. Intentá en unos minutos." : message },
       { status: isThrottle ? 503 : 500 },
