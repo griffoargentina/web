@@ -274,8 +274,10 @@ export default async function AdminDashboard() {
                 color={catalog.sinVehiculos > 0 ? "warn" : "ok"}
               />
               <Stat
-                label="Actualizados últimos 30 días"
-                value={catalog.updatedUltimos30d}
+                label="Con link MercadoLibre"
+                value={`${catalog.conMercadoLibre}`}
+                detail={`${catalog.sinMercadoLibre} sin link`}
+                color={catalog.sinMercadoLibre > 0 ? "warn" : "ok"}
               />
             </div>
 
@@ -343,6 +345,14 @@ export default async function AdminDashboard() {
                       {catalog.discontinuadosPeroEnabled}
                     </span>
                   </li>
+                  <li className="flex items-center justify-between">
+                    <span className="text-gray-700">Sin link MercadoLibre</span>
+                    <span
+                      className={`font-bold ${catalog.sinMercadoLibre > 0 ? "text-amber-600" : "text-gray-500"}`}
+                    >
+                      {catalog.sinMercadoLibre}
+                    </span>
+                  </li>
                 </ul>
               </Card>
             </div>
@@ -387,6 +397,42 @@ export default async function AdminDashboard() {
                       …y {catalog.issues.length - 10} más.
                     </p>
                   )}
+                </Card>
+              </div>
+            )}
+
+            {catalog.sinMercadoLibre > 0 && (
+              <div className="mt-4">
+                <Card>
+                  <h3 className="font-bold text-sm text-[#0a2b3d] uppercase tracking-wide mb-3">
+                    Sin link MercadoLibre ({catalog.sinMercadoLibre})
+                  </h3>
+                  <p className="text-xs text-gray-500 mb-3">
+                    Productos activos sin link asignado en SpecParts. Los primeros 15:
+                  </p>
+                  <ul className="divide-y divide-gray-100">
+                    {catalog.sinMLList.slice(0, 15).map((p) => (
+                      <li
+                        key={p.code}
+                        className="py-2 flex items-center gap-3 text-sm"
+                      >
+                        <span className="font-mono font-bold text-primary w-24 shrink-0">
+                          {p.code}
+                        </span>
+                        <span className="flex-1 min-w-0 truncate text-[#0a2b3d]">
+                          {p.titulo}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  {catalog.sinMercadoLibre > 15 && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      …y {catalog.sinMercadoLibre - 15} más.
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-400 mt-3">
+                    Los links se asignan en el admin de SpecParts (campo Links del producto).
+                  </p>
                 </Card>
               </div>
             )}

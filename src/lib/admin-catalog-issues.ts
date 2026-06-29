@@ -1,4 +1,5 @@
 import { listCatalog } from "@/lib/api/specparts";
+import { getMercadoLibreUrl } from "@/lib/catalog/utils";
 import type { CatalogProduct } from "@/types/specparts";
 
 /**
@@ -22,6 +23,10 @@ export type CatalogSummary = {
   discontinuadosPeroEnabled: number;
   updatedUltimos30d: number;
   updatedUltimos90d: number;
+  /** Cobertura de links de MercadoLibre (productos enabled + no-discontinued). */
+  conMercadoLibre: number;
+  sinMercadoLibre: number;
+  sinMLList: { code: string; titulo: string }[];
   /** Productos con problemas específicos (para la lista). */
   issues: CatalogIssue[];
 };
@@ -55,6 +60,9 @@ export async function getCatalogSummary(): Promise<CatalogSummary | null> {
   let discontinuadosPeroEnabled = 0;
   let updatedUltimos30d = 0;
   let updatedUltimos90d = 0;
+  let conMercadoLibre = 0;
+  let sinMercadoLibre = 0;
+  const sinMLList: { code: string; titulo: string }[] = [];
   const issues: CatalogIssue[] = [];
 
   for (const p of products) {
@@ -84,6 +92,17 @@ export async function getCatalogSummary(): Promise<CatalogSummary | null> {
       if (ts >= ninety) updatedUltimos90d++;
     }
 
+    // MercadoLibre — solo contamos productos enabled + no-discontinued.
+    if (p.enabled === 1 && !p.discontinued) {
+      const titulo = p.product || p.description || p.code;
+      if (getMercadoLibreUrl(p)) {
+        conMercadoLibre++;
+      } else {
+        sinMercadoLibre++;
+        sinMLList.push({ code: p.code, titulo });
+      }
+    }
+
     // Armamos la lista de problemas del producto — solo para productos
     // enabled (los disabled no importan).
     if (p.enabled === 1 && !p.discontinued) {
@@ -110,6 +129,8 @@ export async function getCatalogSummary(): Promise<CatalogSummary | null> {
     return a.code.localeCompare(b.code);
   });
 
+  sinMLList.sort((a, b) => a.code.localeCompare(b.code));
+
   return {
     total: products.length,
     byLinea,
@@ -122,6 +143,9 @@ export async function getCatalogSummary(): Promise<CatalogSummary | null> {
     discontinuadosPeroEnabled,
     updatedUltimos30d,
     updatedUltimos90d,
+    conMercadoLibre,
+    sinMercadoLibre,
+    sinMLList,
     issues,
   };
 }
