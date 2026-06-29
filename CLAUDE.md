@@ -584,10 +584,10 @@ params con brackets, usar **`https` nativo de Node + `zlib.gunzip`**, NUNCA
   limit por IP 10 req/min en Redis (fail-open); (3) caché Redis 7 días
   por patente. Sin esto, los bots quemaban el cupo hourly de SpecParts
   afectando a otros clientes del mismo API key.
-  Caché diferenciado: 7 días si SpecParts encontró el vehículo (`brand`
-  presente), 1 hora si no lo encontró — evita que un resultado vacío
-  por throttling momentáneo quede pegado días. Clave `plate:v2:` (v1
-  cacheaba resultados vacíos sin distinción).
+  Solo se cachean resultados con vehículo encontrado (`brand` presente),
+  por 7 días. Resultados vacíos (patente inexistente o SpecParts throttleado
+  momentáneamente) no se cachean — el próximo intento siempre consulta
+  SpecParts. Clave `plate:v3:`.
 
 ### Búsqueda — 5 tabs
 

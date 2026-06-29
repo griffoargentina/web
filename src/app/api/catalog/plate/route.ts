@@ -13,10 +13,9 @@ export const runtime = "nodejs";
  */
 const PLATE_RE = /^([A-Z]{3}\d{3}|[A-Z]{2}\d{3}[A-Z]{2})$/;
 
-// v2: invalida resultados cacheados con la clave anterior (v1 cacheó respuestas vacías)
-const CACHE_PREFIX = "plate:v2:";
-const CACHE_TTL_HIT = 60 * 60 * 24 * 7; // 7 días si encontró el vehículo
-const CACHE_TTL_MISS = 60 * 60;          // 1 hora si la patente no está en SpecParts
+// v3: invalida v2 que pudo cachear resultados vacíos durante throttling
+const CACHE_PREFIX = "plate:v3:";
+const CACHE_TTL_HIT = 60 * 60 * 24 * 7; // 7 días — solo si encontró el vehículo
 
 const RATE_LIMIT = 10; // máx 10 req por IP por ventana (era 5, muy restrictivo)
 const RATE_WINDOW_SECONDS = 60;
@@ -54,14 +53,14 @@ async function getFromCache(plate: string): Promise<SpecPartsPlateResponse | und
 }
 
 async function saveToCache(plate: string, data: SpecPartsPlateResponse): Promise<void> {
+  // Solo cacheamos si SpecParts encontró un vehículo real.
+  // Resultados vacíos (throttling, patente inexistente) NO se cachean —
+  // así el próximo intento siempre vuelve a consultar SpecParts.
+  if (!data.brand) return;
   const redis = getRedis();
   if (!redis) return;
-  // Solo cacheamos si SpecParts respondió algo (con o sin vehículo).
-  // TTL largo si encontró el vehículo; corto si no lo encontró (evita
-  // que un resultado vacío por throttling quede pegado 7 días).
-  const ttl = data.brand ? CACHE_TTL_HIT : CACHE_TTL_MISS;
   try {
-    await redis.set(CACHE_PREFIX + plate, JSON.stringify(data), { ex: ttl });
+    await redis.set(CACHE_PREFIX + plate, JSON.stringify(data), { ex: CACHE_TTL_HIT });
   } catch {
     /* cache best-effort */
   }
