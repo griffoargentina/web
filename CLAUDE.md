@@ -1403,9 +1403,11 @@ Tres capas para enterarse si algo se rompe:
    Va al email con el que se abrió la cuenta de Vercel.
 3. **Email semanal de salud (digest)** — cron domingos 12 UTC (9 AR)
    en `/api/cron/weekly-digest`. Resume estado de servicios + alertas
-   pendientes + leads de la semana + errores top + snapshots del
-   backup. Lib: `src/lib/health-digest.ts`. Si todo verde → asunto
-   "✅ todo OK"; si algo rojo → "⚠️ resumen con alertas".
+   pendientes + **calidad del catálogo** (sin foto / sin vehículos /
+   sin atributos / sin descripción / sin link ML / discontinuados
+   activos + lista de primeros 10 códigos sin ML) + leads de la semana
+   + errores top + snapshots del backup. Lib: `src/lib/health-digest.ts`.
+   Si todo verde → asunto "✅ todo OK"; si algo rojo → "⚠️ resumen con alertas".
    Destinatario: hash Redis `b2b:config.healthDigestEmail` (override),
    o env var `HEALTH_DIGEST_EMAIL`, o fallback a
    `contacto@griffo.com.ar`. Siempre se agrega `jgriffo@griffo.com.ar`
