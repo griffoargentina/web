@@ -585,9 +585,12 @@ params con brackets, usar **`https` nativo de Node + `zlib.gunzip`**, NUNCA
   por patente. Sin esto, los bots quemaban el cupo hourly de SpecParts
   afectando a otros clientes del mismo API key.
   Solo se cachean resultados con vehículo encontrado (`brand` presente),
-  por 7 días. Resultados vacíos (patente inexistente o SpecParts throttleado
-  momentáneamente) no se cachean — el próximo intento siempre consulta
-  SpecParts. Clave `plate:v3:`.
+  por 7 días. Resultados vacíos no se cachean — el próximo intento siempre
+  consulta SpecParts. Clave `plate:v3:`.
+  `specpartsGet` verifica el HTTP status code: 429 lanza excepción con
+  texto "429" que el endpoint detecta y convierte en 503 con mensaje
+  "Servicio temporalmente no disponible" — distingue throttling de SpecParts
+  de una patente genuinamente no encontrada.
 
 ### Búsqueda — 5 tabs
 
