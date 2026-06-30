@@ -306,9 +306,9 @@ function getAttrDisplayLabel(name: string, isTope: boolean): string | null {
   // Ocultar siempre
   if (n.includes("pliegue")) return null;
 
-  // Atributos de tope — nombres específicos (no ambiguos)
+  // "Diámetro interior/interno": es tope sólo si isTope, de lo contrario es el menor del fuelle
   if (/diámetro int[e]?rior|diámetro intern|diam\. int[e]?rior|diam\. intern|diám\. int|d\. interno/.test(n)) {
-    return "DIÁMETRO INTERNO TOPE";
+    return isTope ? "DIÁMETRO INTERNO TOPE" : "DIÁMETRO MENOR FUELLE";
   }
   if (n === "largo de tope" || n === "largo tope" || n === "long. tope" || n === "altura libre" || n === "altura") {
     return "LARGO TOPE";
