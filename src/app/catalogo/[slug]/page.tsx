@@ -81,9 +81,12 @@ export default async function ProductoCatalogoPage({ params }: { params: Params 
   };
   const isComponente = (name: string) => name.toLowerCase().includes("component");
 
-  const isTope =
-    product.product.toLowerCase().includes("tope") &&
-    !product.product.toLowerCase().includes("fuelle");
+  const productNameL = product.product.toLowerCase();
+  const isTope = productNameL.includes("tope") && !productNameL.includes("fuelle");
+  // Kit FUELLE Y TOPE: tiene ambos en el nombre. El fuelle usa attrs "Diámetro Menor/Mayor"
+  // y el tope usa "Diámetro Interior/Interno" — el mismo attr que en fuelles simples es
+  // ambiguo, pero en kits pertenece siempre al tope.
+  const isKit = productNameL.includes("tope") && productNameL.includes("fuelle");
 
   const isDireccion = (product.category || "").toLowerCase().includes("direc");
 
@@ -95,7 +98,7 @@ export default async function ProductoCatalogoPage({ params }: { params: Params 
 
   const medidas = attributes
     .filter((a) => !isAplicacion(a.name) && !isComponente(a.name))
-    .map((a) => ({ ...a, displayName: getAttrDisplayLabel(a.name, isTope, isDireccion, hasBocaMenorExplicit) }))
+    .map((a) => ({ ...a, displayName: getAttrDisplayLabel(a.name, isTope, isDireccion, hasBocaMenorExplicit, isKit) }))
     .filter((a) => a.displayName !== null) as (SpecPartsAttribute & { displayName: string })[];
 
   const componenteAttr = attributes.find((a) => isComponente(a.name));
@@ -325,13 +328,14 @@ function getAttrDisplayLabel(
   isTope: boolean,
   isDireccion = false,
   hasBocaMenorExplicit = false,
+  isKit = false,
 ): string | null {
   const n = name.toLowerCase().trim();
 
   if (n.includes("pliegue")) return null;
 
   // Para kits (KIT FUELLE Y TOPE), isTope=false aunque haya attrs del tope.
-  // Detectamos attrs del tope por su nombre además del flag de producto.
+  // Detectamos attrs del tope por el nombre del attr (substring "tope").
   const esAttrTope = isTope || n.includes("tope");
 
   // El nombre ya especifica qué boca es → resolución directa, sin ambigüedad.
@@ -341,18 +345,20 @@ function getAttrDisplayLabel(
     return esAttrTope ? "DIÁMETRO INTERNO TOPE" : "DIÁMETRO BOCA MENOR FUELLE";
   }
 
-  // Largo tope (varias formas que usa SpecParts); substr "tope" ya lo captura arriba si viene en el nombre.
+  // Largo tope (varias formas que usa SpecParts)
   if (n === "largo de tope" || n === "largo tope" || n === "long. tope" || n === "altura libre" || n === "altura") {
     return "LARGO TOPE";
   }
 
-  // "Diámetro interior/interno" sin "boca" en el nombre → ambiguo o del tope.
+  // "Diámetro interior/interno" sin "boca" en el nombre.
+  // En kits el fuelle usa "Diámetro Menor/Mayor", así que "Diámetro Interior/Interno"
+  // pertenece siempre al tope.
   if (/diámetro int[e]?rior|diámetro intern|diam\. int[e]?rior|diam\. intern|diám\. int|d\. interno/.test(n)) {
-    if (esAttrTope) return "DIÁMETRO INTERNO TOPE";
+    if (esAttrTope || isKit) return "DIÁMETRO INTERNO TOPE";
     return isDireccion || hasBocaMenorExplicit ? "DIÁMETRO BOCA MAYOR FUELLE" : "DIÁMETRO BOCA MENOR FUELLE";
   }
 
-  // Sinónimos cortos sin "boca" en el nombre
+  // Sinónimos cortos sin "boca" en el nombre (usados por el fuelle en kits)
   if (n === "diámetro menor" || n === "diam. menor") {
     return esAttrTope ? "DIÁMETRO INTERNO TOPE" : "DIÁMETRO BOCA MENOR FUELLE";
   }
