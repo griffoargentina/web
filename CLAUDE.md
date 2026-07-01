@@ -752,8 +752,14 @@ Layout por prioridad de info (de más a menos relevante):
    se detectan attrs del tope por el nombre del atributo mismo ("tope" como
    substring). Esto permite distinguir "Diámetro Interno Tope" de
    "Diámetro Interior Boca Menor" dentro del mismo kit.
+   **`isKit`** = producto tiene "fuelle" Y "tope" en el nombre. En kits,
+   el fuelle usa attrs cortos ("Diámetro Menor"/"Diámetro Mayor") y el tope
+   usa "Diámetro Interior"/"Diámetro Interno" (sin "boca"). Por eso, en el
+   bloque del regex `diámetro int[e]?rior/intern`, `isKit=true` fuerza
+   DIÁMETRO INTERNO TOPE sin depender de hasBocaMenorExplicit.
    `isDireccion` = category incluye "direc";
-   `hasBocaMenorExplicit` = algún attr tiene "boca menor" como substring.
+   `hasBocaMenorExplicit` = algún attr tiene "boca menor" como substring
+   (fallback para fuelles simples con "Diámetro Interior" ambiguo).
 6. Componentes del kit (si aplica) — inline
 7. **Referencias OEM** — chips `MARCA CÓDIGO` filtrados de `cross[]` y
    `reference[]` donde `oem === 1`. Solo aparece si hay datos en SpecParts.
