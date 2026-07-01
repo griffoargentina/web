@@ -739,16 +739,15 @@ Layout por prioridad de info (de más a menos relevante):
    - DIÁMETRO MENOR / BOCA MENOR → DIÁMETRO BOCA MENOR FUELLE (fuelle) o DIÁMETRO INTERNO TOPE (tope)
    - DIÁMETRO MAYOR / BOCA MAYOR → DIÁMETRO BOCA MAYOR FUELLE (siempre)
    - DIÁMETRO INTERIOR / DIÁMETRO INTERNO (y variantes) → DIÁMETRO INTERNO TOPE (tope)
-     o DIÁMETRO BOCA MAYOR FUELLE (Dirección/cremallera — el agujero grande)
-     o DIÁMETRO BOCA MENOR FUELLE (Transmisión/Suspensión — el extremo pequeño)
+     o DIÁMETRO BOCA MAYOR FUELLE si el producto ya tiene "boca menor" explícita O es cremallera
+     o DIÁMETRO BOCA MENOR FUELLE si es el único diámetro disponible (ej. 183-12 con 24.6 mm)
    - LARGO / LARGO FUELLE / LONG. FUELLE → LARGO FUELLE (fuelle) o LARGO TOPE (tope)
    - LARGO DE TOPE / LARGO TOPE / LONG. TOPE / ALTURA LIBRE / ALTURA → LARGO TOPE (siempre)
    - PLIEGUES → oculto siempre
    - Cualquier otro → nombre crudo del atributo (ej. "FORMATO DE BOCA MAYOR")
    Contextos: `isTope` = nombre contiene "tope" sin "fuelle";
-   `isDireccion` = category incluye "direc" (cremallera).
-   ⚠️ Bug histórico (corregido): "DIÁMETRO INTERNO" en cremallera mostraba BOCA MENOR
-   en lugar de BOCA MAYOR — el agujero de 104mm en cremalleras es el extremo grande.
+   `isDireccion` = category incluye "direc"; `hasBocaMenorExplicit` = el producto
+   tiene un attr "diámetro menor"/"boca menor" → en ese caso "diámetro interior" es MAYOR.
 6. Componentes del kit (si aplica) — inline
 7. **Referencias OEM** — chips `MARCA CÓDIGO` filtrados de `cross[]` y
    `reference[]` donde `oem === 1`. Solo aparece si hay datos en SpecParts.
