@@ -735,19 +735,19 @@ Layout por prioridad de info (de más a menos relevante):
 4. CTA **MercadoLibre** (arriba del fold)
 5. Tabla compacta de medidas (divide-y, no cajas grandes). Los nombres
    crudos de SpecParts se mapean con `getAttrDisplayLabel()` (definida en
-   la propia página) antes de mostrarse. Tabla de mapeo completa:
-   - DIÁMETRO MENOR / BOCA MENOR → DIÁMETRO BOCA MENOR FUELLE (fuelle) o DIÁMETRO INTERNO TOPE (tope)
-   - DIÁMETRO MAYOR / BOCA MAYOR → DIÁMETRO BOCA MAYOR FUELLE (siempre)
-   - DIÁMETRO INTERIOR / DIÁMETRO INTERNO (y variantes) → DIÁMETRO INTERNO TOPE (tope)
-     o DIÁMETRO BOCA MAYOR FUELLE si el producto ya tiene "boca menor" explícita O es cremallera
-     o DIÁMETRO BOCA MENOR FUELLE si es el único diámetro disponible (ej. 183-12 con 24.6 mm)
+   la propia página) antes de mostrarse. Regla principal (todos los fuelles):
+   - Nombre contiene **"boca menor"** (substring) → DIÁMETRO BOCA MENOR FUELLE
+   - Nombre contiene **"boca mayor"** (substring) → DIÁMETRO BOCA MAYOR FUELLE
    - LARGO / LARGO FUELLE / LONG. FUELLE → LARGO FUELLE (fuelle) o LARGO TOPE (tope)
-   - LARGO DE TOPE / LARGO TOPE / LONG. TOPE / ALTURA LIBRE / ALTURA → LARGO TOPE (siempre)
+   - LARGO DE TOPE / LARGO TOPE / LONG. TOPE / ALTURA LIBRE / ALTURA → LARGO TOPE
    - PLIEGUES → oculto siempre
-   - Cualquier otro → nombre crudo del atributo (ej. "FORMATO DE BOCA MAYOR")
+   - Fallback para attrs sin "boca" en el nombre ("Diámetro Interior" a secas):
+     si ya existe otro attr con "boca menor" → BOCA MAYOR; si no → BOCA MENOR.
+   - Topes: "Diámetro Interior/Interno" → DIÁMETRO INTERNO TOPE
+   - Cualquier otro → nombre crudo del atributo
    Contextos: `isTope` = nombre contiene "tope" sin "fuelle";
-   `isDireccion` = category incluye "direc"; `hasBocaMenorExplicit` = el producto
-   tiene un attr "diámetro menor"/"boca menor" → en ese caso "diámetro interior" es MAYOR.
+   `isDireccion` = category incluye "direc"; `hasBocaMenorExplicit` = algún attr
+   del producto tiene "boca menor" como substring (para el fallback ambiguo).
 6. Componentes del kit (si aplica) — inline
 7. **Referencias OEM** — chips `MARCA CÓDIGO` filtrados de `cross[]` y
    `reference[]` donde `oem === 1`. Solo aparece si hay datos en SpecParts.

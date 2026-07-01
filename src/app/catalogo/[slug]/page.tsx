@@ -87,13 +87,11 @@ export default async function ProductoCatalogoPage({ params }: { params: Params 
 
   const isDireccion = (product.category || "").toLowerCase().includes("direc");
 
-  // Si el producto ya tiene un attr explícito de boca menor, "diámetro interior/interno"
-  // es la boca mayor (el agujero grande). Si NO tiene boca menor explícita (ej. 183-12
-  // con solo "diámetro interno" = 24.6 mm), ese attr es la boca menor.
-  const hasBocaMenorExplicit = attributes.some((a) => {
-    const n = a.name.toLowerCase().trim();
-    return n === "diámetro menor" || n === "diam. menor" || n === "boca menor";
-  });
+  // Fallback para attrs que no dicen "boca menor/mayor" explícitamente en el nombre:
+  // si ya existe un attr con "boca menor", un "diámetro interior" a secas es la boca mayor.
+  const hasBocaMenorExplicit = attributes.some((a) =>
+    a.name.toLowerCase().trim().includes("boca menor"),
+  );
 
   const medidas = attributes
     .filter((a) => !isAplicacion(a.name) && !isComponente(a.name))
@@ -308,16 +306,19 @@ function MedidaRow({ attr, label }: { attr: SpecPartsAttribute; label: string })
 /**
  * Mapea el nombre crudo del atributo de SpecParts al label de display.
  * Devuelve null si el atributo debe ocultarse.
- * `isTope` = el producto es un Tope sin Fuelle (para desambiguar "largo" y "boca menor").
- */
-/**
- * Mapea el nombre crudo del atributo de SpecParts al label de display.
- * Devuelve null si el atributo debe ocultarse.
- * `isTope`            = el producto es un Tope sin Fuelle.
- * `isDireccion`       = categoría Dirección (cremallera).
- * `hasBocaMenorExplicit` = el producto tiene un attr "boca menor"/"diámetro menor"
- *                       explícito. Si es true, "diámetro interior/interno" es la
- *                       boca mayor; si false, es la boca menor (único diámetro, ej. 183-12).
+ *
+ * Regla principal (todos los fuelles — transmisión, dirección, suspensión):
+ *   Nombre contiene "boca menor"  →  Diámetro Boca Menor Fuelle
+ *   Nombre contiene "boca mayor"  →  Diámetro Boca Mayor Fuelle
+ *   "Largo" / "Largo Fuelle"      →  Largo Fuelle
+ *
+ * Topes:
+ *   "Diámetro Interno/Interior"   →  Diámetro Interno Tope
+ *   "Largo Tope" / variantes      →  Largo Tope
+ *
+ * Fallback para attrs ambiguos ("Diámetro Interior" sin "boca" en el nombre):
+ *   Si ya hay otro attr con "boca menor" → BOCA MAYOR (era el diámetro grande).
+ *   Si no → BOCA MENOR (único diámetro disponible).
  */
 function getAttrDisplayLabel(
   name: string,
@@ -327,26 +328,30 @@ function getAttrDisplayLabel(
 ): string | null {
   const n = name.toLowerCase().trim();
 
-  // Ocultar siempre
   if (n.includes("pliegue")) return null;
 
-  // "Diámetro interior/interno": ambiguo.
-  // → TOPE si isTope.
-  // → BOCA MAYOR si ya hay un attr explícito de boca menor (o es cremallera).
-  // → BOCA MENOR si es el único diámetro disponible (ej. fuelle semieje sin boca menor).
-  if (/diámetro int[e]?rior|diámetro intern|diam\. int[e]?rior|diam\. intern|diám\. int|d\. interno/.test(n)) {
-    if (isTope) return "DIÁMETRO INTERNO TOPE";
-    return isDireccion || hasBocaMenorExplicit ? "DIÁMETRO BOCA MAYOR FUELLE" : "DIÁMETRO BOCA MENOR FUELLE";
+  // El nombre ya especifica qué boca es → resolución directa, sin ambigüedad.
+  if (n.includes("boca mayor")) return "DIÁMETRO BOCA MAYOR FUELLE";
+  if (n.includes("boca menor")) {
+    return isTope ? "DIÁMETRO INTERNO TOPE" : "DIÁMETRO BOCA MENOR FUELLE";
   }
+
+  // Largo tope (varias formas que usa SpecParts)
   if (n === "largo de tope" || n === "largo tope" || n === "long. tope" || n === "altura libre" || n === "altura") {
     return "LARGO TOPE";
   }
 
-  // Atributos ambiguos — resueltos por contexto (isTope)
-  if (n === "diámetro menor" || n === "diam. menor" || n === "boca menor") {
+  // "Diámetro interior/interno" sin "boca" en el nombre → verdaderamente ambiguo.
+  if (/diámetro int[e]?rior|diámetro intern|diam\. int[e]?rior|diam\. intern|diám\. int|d\. interno/.test(n)) {
+    if (isTope) return "DIÁMETRO INTERNO TOPE";
+    return isDireccion || hasBocaMenorExplicit ? "DIÁMETRO BOCA MAYOR FUELLE" : "DIÁMETRO BOCA MENOR FUELLE";
+  }
+
+  // Sinónimos cortos sin "boca" en el nombre
+  if (n === "diámetro menor" || n === "diam. menor") {
     return isTope ? "DIÁMETRO INTERNO TOPE" : "DIÁMETRO BOCA MENOR FUELLE";
   }
-  if (n === "diámetro mayor" || n === "diam. mayor" || n === "boca mayor") {
+  if (n === "diámetro mayor" || n === "diam. mayor") {
     return "DIÁMETRO BOCA MAYOR FUELLE";
   }
   if (n === "largo" || n === "largo fuelle" || n === "long. fuelle") {
