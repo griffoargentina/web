@@ -330,32 +330,37 @@ function getAttrDisplayLabel(
 
   if (n.includes("pliegue")) return null;
 
+  // Para kits (KIT FUELLE Y TOPE), isTope=false aunque haya attrs del tope.
+  // Detectamos attrs del tope por su nombre además del flag de producto.
+  const esAttrTope = isTope || n.includes("tope");
+
   // El nombre ya especifica qué boca es → resolución directa, sin ambigüedad.
+  // "boca mayor" siempre es del fuelle (los topes no tienen boca mayor).
   if (n.includes("boca mayor")) return "DIÁMETRO BOCA MAYOR FUELLE";
   if (n.includes("boca menor")) {
-    return isTope ? "DIÁMETRO INTERNO TOPE" : "DIÁMETRO BOCA MENOR FUELLE";
+    return esAttrTope ? "DIÁMETRO INTERNO TOPE" : "DIÁMETRO BOCA MENOR FUELLE";
   }
 
-  // Largo tope (varias formas que usa SpecParts)
+  // Largo tope (varias formas que usa SpecParts); substr "tope" ya lo captura arriba si viene en el nombre.
   if (n === "largo de tope" || n === "largo tope" || n === "long. tope" || n === "altura libre" || n === "altura") {
     return "LARGO TOPE";
   }
 
-  // "Diámetro interior/interno" sin "boca" en el nombre → verdaderamente ambiguo.
+  // "Diámetro interior/interno" sin "boca" en el nombre → ambiguo o del tope.
   if (/diámetro int[e]?rior|diámetro intern|diam\. int[e]?rior|diam\. intern|diám\. int|d\. interno/.test(n)) {
-    if (isTope) return "DIÁMETRO INTERNO TOPE";
+    if (esAttrTope) return "DIÁMETRO INTERNO TOPE";
     return isDireccion || hasBocaMenorExplicit ? "DIÁMETRO BOCA MAYOR FUELLE" : "DIÁMETRO BOCA MENOR FUELLE";
   }
 
   // Sinónimos cortos sin "boca" en el nombre
   if (n === "diámetro menor" || n === "diam. menor") {
-    return isTope ? "DIÁMETRO INTERNO TOPE" : "DIÁMETRO BOCA MENOR FUELLE";
+    return esAttrTope ? "DIÁMETRO INTERNO TOPE" : "DIÁMETRO BOCA MENOR FUELLE";
   }
   if (n === "diámetro mayor" || n === "diam. mayor") {
     return "DIÁMETRO BOCA MAYOR FUELLE";
   }
   if (n === "largo" || n === "largo fuelle" || n === "long. fuelle") {
-    return isTope ? "LARGO TOPE" : "LARGO FUELLE";
+    return esAttrTope ? "LARGO TOPE" : "LARGO FUELLE";
   }
 
   return name;
