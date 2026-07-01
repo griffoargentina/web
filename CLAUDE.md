@@ -736,16 +736,19 @@ Layout por prioridad de info (de más a menos relevante):
 5. Tabla compacta de medidas (divide-y, no cajas grandes). Los nombres
    crudos de SpecParts se mapean con `getAttrDisplayLabel()` (definida en
    la propia página) antes de mostrarse. Tabla de mapeo completa:
-   - DIÁMETRO MENOR / BOCA MENOR → DIÁMETRO MENOR FUELLE (fuelle) o DIÁMETRO INTERNO TOPE (tope)
-   - DIÁMETRO MAYOR / BOCA MAYOR → DIÁMETRO MAYOR FUELLE (siempre)
-   - DIÁMETRO INTERIOR / DIÁMETRO INTERNO (y variantes) → DIÁMETRO MENOR FUELLE (fuelle) o DIÁMETRO INTERNO TOPE (tope)
+   - DIÁMETRO MENOR / BOCA MENOR → DIÁMETRO BOCA MENOR FUELLE (fuelle) o DIÁMETRO INTERNO TOPE (tope)
+   - DIÁMETRO MAYOR / BOCA MAYOR → DIÁMETRO BOCA MAYOR FUELLE (siempre)
+   - DIÁMETRO INTERIOR / DIÁMETRO INTERNO (y variantes) → DIÁMETRO INTERNO TOPE (tope)
+     o DIÁMETRO BOCA MAYOR FUELLE (Dirección/cremallera — el agujero grande)
+     o DIÁMETRO BOCA MENOR FUELLE (Transmisión/Suspensión — el extremo pequeño)
    - LARGO / LARGO FUELLE / LONG. FUELLE → LARGO FUELLE (fuelle) o LARGO TOPE (tope)
    - LARGO DE TOPE / LARGO TOPE / LONG. TOPE / ALTURA LIBRE / ALTURA → LARGO TOPE (siempre)
    - PLIEGUES → oculto siempre
    - Cualquier otro → nombre crudo del atributo (ej. "FORMATO DE BOCA MAYOR")
-   Contexto `isTope` = nombre del producto contiene "tope" sin "fuelle".
-   ⚠️ Bug histórico (corregido): "DIÁMETRO INTERNO" mapeaba a DIÁMETRO INTERNO TOPE
-   sin chequear isTope — afectaba fuelles semieje con ese nombre de atributo.
+   Contextos: `isTope` = nombre contiene "tope" sin "fuelle";
+   `isDireccion` = category incluye "direc" (cremallera).
+   ⚠️ Bug histórico (corregido): "DIÁMETRO INTERNO" en cremallera mostraba BOCA MENOR
+   en lugar de BOCA MAYOR — el agujero de 104mm en cremalleras es el extremo grande.
 6. Componentes del kit (si aplica) — inline
 7. **Referencias OEM** — chips `MARCA CÓDIGO` filtrados de `cross[]` y
    `reference[]` donde `oem === 1`. Solo aparece si hay datos en SpecParts.

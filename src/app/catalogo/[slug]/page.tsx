@@ -85,9 +85,13 @@ export default async function ProductoCatalogoPage({ params }: { params: Params 
     product.product.toLowerCase().includes("tope") &&
     !product.product.toLowerCase().includes("fuelle");
 
+  // En cremallera (Dirección), "diámetro interior" es la boca mayor (agujero grande).
+  // En semieje (Transmisión/Suspensión), "diámetro interno" es el extremo pequeño (boca menor).
+  const isDireccion = (product.category || "").toLowerCase().includes("direc");
+
   const medidas = attributes
     .filter((a) => !isAplicacion(a.name) && !isComponente(a.name))
-    .map((a) => ({ ...a, displayName: getAttrDisplayLabel(a.name, isTope) }))
+    .map((a) => ({ ...a, displayName: getAttrDisplayLabel(a.name, isTope, isDireccion) }))
     .filter((a) => a.displayName !== null) as (SpecPartsAttribute & { displayName: string })[];
 
   const componenteAttr = attributes.find((a) => isComponente(a.name));
@@ -300,15 +304,24 @@ function MedidaRow({ attr, label }: { attr: SpecPartsAttribute; label: string })
  * Devuelve null si el atributo debe ocultarse.
  * `isTope` = el producto es un Tope sin Fuelle (para desambiguar "largo" y "boca menor").
  */
-function getAttrDisplayLabel(name: string, isTope: boolean): string | null {
+/**
+ * Mapea el nombre crudo del atributo de SpecParts al label de display.
+ * Devuelve null si el atributo debe ocultarse.
+ * `isTope`     = el producto es un Tope sin Fuelle.
+ * `isDireccion`= categoría Dirección (cremallera). En cremallera, "diámetro
+ *                interior" es la boca mayor (agujero grande del fuelle); en
+ *                transmisión/suspensión es la boca menor (extremo pequeño).
+ */
+function getAttrDisplayLabel(name: string, isTope: boolean, isDireccion = false): string | null {
   const n = name.toLowerCase().trim();
 
   // Ocultar siempre
   if (n.includes("pliegue")) return null;
 
-  // "Diámetro interior/interno": es tope sólo si isTope, de lo contrario es el menor del fuelle
+  // "Diámetro interior/interno": ambiguo — depende de línea y tipo de producto
   if (/diámetro int[e]?rior|diámetro intern|diam\. int[e]?rior|diam\. intern|diám\. int|d\. interno/.test(n)) {
-    return isTope ? "DIÁMETRO INTERNO TOPE" : "DIÁMETRO MENOR FUELLE";
+    if (isTope) return "DIÁMETRO INTERNO TOPE";
+    return isDireccion ? "DIÁMETRO BOCA MAYOR FUELLE" : "DIÁMETRO BOCA MENOR FUELLE";
   }
   if (n === "largo de tope" || n === "largo tope" || n === "long. tope" || n === "altura libre" || n === "altura") {
     return "LARGO TOPE";
@@ -316,10 +329,10 @@ function getAttrDisplayLabel(name: string, isTope: boolean): string | null {
 
   // Atributos ambiguos — resueltos por contexto (isTope)
   if (n === "diámetro menor" || n === "diam. menor" || n === "boca menor") {
-    return isTope ? "DIÁMETRO INTERNO TOPE" : "DIÁMETRO MENOR FUELLE";
+    return isTope ? "DIÁMETRO INTERNO TOPE" : "DIÁMETRO BOCA MENOR FUELLE";
   }
   if (n === "diámetro mayor" || n === "diam. mayor" || n === "boca mayor") {
-    return "DIÁMETRO MAYOR FUELLE";
+    return "DIÁMETRO BOCA MAYOR FUELLE";
   }
   if (n === "largo" || n === "largo fuelle" || n === "long. fuelle") {
     return isTope ? "LARGO TOPE" : "LARGO FUELLE";
