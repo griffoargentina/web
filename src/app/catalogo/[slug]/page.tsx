@@ -85,13 +85,19 @@ export default async function ProductoCatalogoPage({ params }: { params: Params 
     product.product.toLowerCase().includes("tope") &&
     !product.product.toLowerCase().includes("fuelle");
 
-  // En cremallera (Dirección), "diámetro interior" es la boca mayor (agujero grande).
-  // En semieje (Transmisión/Suspensión), "diámetro interno" es el extremo pequeño (boca menor).
   const isDireccion = (product.category || "").toLowerCase().includes("direc");
+
+  // Si el producto ya tiene un attr explícito de boca menor, "diámetro interior/interno"
+  // es la boca mayor (el agujero grande). Si NO tiene boca menor explícita (ej. 183-12
+  // con solo "diámetro interno" = 24.6 mm), ese attr es la boca menor.
+  const hasBocaMenorExplicit = attributes.some((a) => {
+    const n = a.name.toLowerCase().trim();
+    return n === "diámetro menor" || n === "diam. menor" || n === "boca menor";
+  });
 
   const medidas = attributes
     .filter((a) => !isAplicacion(a.name) && !isComponente(a.name))
-    .map((a) => ({ ...a, displayName: getAttrDisplayLabel(a.name, isTope, isDireccion) }))
+    .map((a) => ({ ...a, displayName: getAttrDisplayLabel(a.name, isTope, isDireccion, hasBocaMenorExplicit) }))
     .filter((a) => a.displayName !== null) as (SpecPartsAttribute & { displayName: string })[];
 
   const componenteAttr = attributes.find((a) => isComponente(a.name));
@@ -307,21 +313,30 @@ function MedidaRow({ attr, label }: { attr: SpecPartsAttribute; label: string })
 /**
  * Mapea el nombre crudo del atributo de SpecParts al label de display.
  * Devuelve null si el atributo debe ocultarse.
- * `isTope`     = el producto es un Tope sin Fuelle.
- * `isDireccion`= categoría Dirección (cremallera). En cremallera, "diámetro
- *                interior" es la boca mayor (agujero grande del fuelle); en
- *                transmisión/suspensión es la boca menor (extremo pequeño).
+ * `isTope`            = el producto es un Tope sin Fuelle.
+ * `isDireccion`       = categoría Dirección (cremallera).
+ * `hasBocaMenorExplicit` = el producto tiene un attr "boca menor"/"diámetro menor"
+ *                       explícito. Si es true, "diámetro interior/interno" es la
+ *                       boca mayor; si false, es la boca menor (único diámetro, ej. 183-12).
  */
-function getAttrDisplayLabel(name: string, isTope: boolean, isDireccion = false): string | null {
+function getAttrDisplayLabel(
+  name: string,
+  isTope: boolean,
+  isDireccion = false,
+  hasBocaMenorExplicit = false,
+): string | null {
   const n = name.toLowerCase().trim();
 
   // Ocultar siempre
   if (n.includes("pliegue")) return null;
 
-  // "Diámetro interior/interno": ambiguo — depende de línea y tipo de producto
+  // "Diámetro interior/interno": ambiguo.
+  // → TOPE si isTope.
+  // → BOCA MAYOR si ya hay un attr explícito de boca menor (o es cremallera).
+  // → BOCA MENOR si es el único diámetro disponible (ej. fuelle semieje sin boca menor).
   if (/diámetro int[e]?rior|diámetro intern|diam\. int[e]?rior|diam\. intern|diám\. int|d\. interno/.test(n)) {
     if (isTope) return "DIÁMETRO INTERNO TOPE";
-    return isDireccion ? "DIÁMETRO BOCA MAYOR FUELLE" : "DIÁMETRO BOCA MENOR FUELLE";
+    return isDireccion || hasBocaMenorExplicit ? "DIÁMETRO BOCA MAYOR FUELLE" : "DIÁMETRO BOCA MENOR FUELLE";
   }
   if (n === "largo de tope" || n === "largo tope" || n === "long. tope" || n === "altura libre" || n === "altura") {
     return "LARGO TOPE";
