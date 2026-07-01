@@ -735,19 +735,25 @@ Layout por prioridad de info (de más a menos relevante):
 4. CTA **MercadoLibre** (arriba del fold)
 5. Tabla compacta de medidas (divide-y, no cajas grandes). Los nombres
    crudos de SpecParts se mapean con `getAttrDisplayLabel()` (definida en
-   la propia página) antes de mostrarse. Regla principal (todos los fuelles):
-   - Nombre contiene **"boca menor"** (substring) → DIÁMETRO BOCA MENOR FUELLE
-   - Nombre contiene **"boca mayor"** (substring) → DIÁMETRO BOCA MAYOR FUELLE
-   - LARGO / LARGO FUELLE / LONG. FUELLE → LARGO FUELLE (fuelle) o LARGO TOPE (tope)
+   la propia página) antes de mostrarse. Reglas (todos los fuelles):
+   - Nombre contiene **"boca mayor"** → DIÁMETRO BOCA MAYOR FUELLE
+   - Nombre contiene **"boca menor"** + es attr de tope → DIÁMETRO INTERNO TOPE
+   - Nombre contiene **"boca menor"** + es attr de fuelle → DIÁMETRO BOCA MENOR FUELLE
+   - LARGO / LARGO FUELLE / LONG. FUELLE → LARGO FUELLE
    - LARGO DE TOPE / LARGO TOPE / LONG. TOPE / ALTURA LIBRE / ALTURA → LARGO TOPE
    - PLIEGUES → oculto siempre
    - Fallback para attrs sin "boca" en el nombre ("Diámetro Interior" a secas):
+     si es attr de tope → DIÁMETRO INTERNO TOPE;
      si ya existe otro attr con "boca menor" → BOCA MAYOR; si no → BOCA MENOR.
-   - Topes: "Diámetro Interior/Interno" → DIÁMETRO INTERNO TOPE
    - Cualquier otro → nombre crudo del atributo
-   Contextos: `isTope` = nombre contiene "tope" sin "fuelle";
-   `isDireccion` = category incluye "direc"; `hasBocaMenorExplicit` = algún attr
-   del producto tiene "boca menor" como substring (para el fallback ambiguo).
+
+   **`esAttrTope`** = `isTope || n.includes("tope")`. Para KIT FUELLE Y TOPE,
+   `isTope=false` (el producto tiene "fuelle" Y "tope" en el nombre), así que
+   se detectan attrs del tope por el nombre del atributo mismo ("tope" como
+   substring). Esto permite distinguir "Diámetro Interno Tope" de
+   "Diámetro Interior Boca Menor" dentro del mismo kit.
+   `isDireccion` = category incluye "direc";
+   `hasBocaMenorExplicit` = algún attr tiene "boca menor" como substring.
 6. Componentes del kit (si aplica) — inline
 7. **Referencias OEM** — chips `MARCA CÓDIGO` filtrados de `cross[]` y
    `reference[]` donde `oem === 1`. Solo aparece si hay datos en SpecParts.
