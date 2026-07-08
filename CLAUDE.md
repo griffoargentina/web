@@ -579,11 +579,16 @@ params con brackets, usar **`https` nativo de Node + `zlib.gunzip`**, NUNCA
   corresponde a un destacado, `redirect()` server-side a `/productos/[slug]`.
 - `/api/catalog/products` — devuelve productos con `_searchText` pre-computado.
 - `/api/catalog/plate?plate=XXX` — identifica vehículo por patente.
-  Protegido con tres capas: (1) validación de formato argentino estricta
-  (ABC123 vieja o AB123CD Mercosur) antes de tocar SpecParts; (2) rate
-  limit por IP 10 req/min en Redis (fail-open); (3) caché Redis 7 días
-  por patente. Sin esto, los bots quemaban el cupo hourly de SpecParts
-  afectando a otros clientes del mismo API key.
+  Protegido con cuatro capas: (1) **token firmado** `X-Catalog-Token`
+  (HMAC-SHA256, ventana horaria, stateless) — el servidor lo genera al
+  renderizar `/catalogo` (`generateCatalogToken` en `src/lib/catalog-token.ts`)
+  y el frontend lo manda como header; sin token → 403 sin tocar SpecParts.
+  Bloquea bots que llaman directo a la URL sin pasar por la web. (2)
+  validación de formato argentino estricta (ABC123 vieja o AB123CD Mercosur)
+  antes de tocar SpecParts; (3) rate limit por IP 10 req/min en Redis
+  (fail-open); (4) caché Redis 7 días por patente.
+  Sin esto, los bots quemaban el cupo hourly de SpecParts afectando a
+  otros clientes del mismo API key (evidencia: 740 eventos AWS junio 2026).
   Solo se cachean resultados con vehículo encontrado (`brand` presente),
   por 7 días. Resultados vacíos no se cachean — el próximo intento siempre
   consulta SpecParts. Clave `plate:v3:`.
@@ -802,6 +807,7 @@ URLs indexables en Google (cada producto tiene una sola URL canónica).
 
 ### Archivos clave
 
+- `src/lib/catalog-token.ts` — genera y verifica el token HMAC de patente (`generateCatalogToken`, `verifyCatalogToken`). Server-only, stateless, ventana horaria de 1h.
 - `src/lib/api/specparts.ts` — cliente HTTP (https nativo + zlib + cache).
 - `src/lib/catalog/utils.ts` — helpers puros (normalize, 5 búsquedas,
   buildVehicleTree, buildMeasureRows, getAttrValue, getMercadoLibreUrl).
