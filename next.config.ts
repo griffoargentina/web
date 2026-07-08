@@ -116,6 +116,12 @@ const nextConfig: NextConfig = {
     return [
       // ---- QRs de packaging del sitio viejo — sin /productos/ prefix ----
       {
+        // QR impreso en packaging — no cambiar nunca.
+        source: "/direccionuniversal",
+        destination: "/productos/fuelle-universal-de-direccion",
+        permanent: true,
+      },
+      {
         source: "/maquina-montadora-de-fuelles",
         destination: "/productos/maquina-montadora-de-fuelles",
         permanent: true,
