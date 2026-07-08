@@ -81,7 +81,33 @@ async function saveToCache(plate: string, data: SpecPartsPlateResponse): Promise
   }
 }
 
+async function verifyRecaptcha(token: string | null): Promise<boolean> {
+  const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+  if (!secretKey) return true; // sin clave configurada → deshabilitado, fail-open
+  if (!token) return false;
+  try {
+    const res = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ secret: secretKey, response: token }).toString(),
+    });
+    const data = await res.json() as { success: boolean; score?: number };
+    return data.success && (data.score ?? 1) >= 0.5;
+  } catch {
+    return true; // error de red al verificar → fail-open
+  }
+}
+
 export async function GET(request: Request) {
+  const recaptchaToken = request.headers.get("X-Recaptcha-Token");
+  const recaptchaOk = await verifyRecaptcha(recaptchaToken);
+  if (!recaptchaOk) {
+    return NextResponse.json(
+      { error: "Verificación de seguridad fallida. Recargá la página e intentá de nuevo." },
+      { status: 403 },
+    );
+  }
+
   const rawPlate = new URL(request.url).searchParams.get("plate");
   const plate = rawPlate?.trim().toUpperCase().replace(/\s+/g, "") ?? "";
 

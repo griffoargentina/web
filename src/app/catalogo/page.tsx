@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import Script from "next/script";
 
 import { CatalogSearch } from "@/components/catalog/CatalogSearch";
 import type { CatalogStatus } from "@/components/catalog/StatusBadge";
@@ -72,14 +73,24 @@ export default async function CatalogoPage() {
   // en UI ni en búsqueda. Reduce ~10-15% el JSON serializado en el HTML.
   const clientProducts = stripProductsForClient(products);
 
+  const recaptchaSiteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+
   return (
-    <Suspense>
-      <CatalogSearch
-        products={clientProducts}
-        status={status}
-        trebolesUrl={trebolesUrl}
-        mlLinks={mlLinks}
-      />
-    </Suspense>
+    <>
+      {recaptchaSiteKey && (
+        <Script
+          src={`https://www.google.com/recaptcha/api.js?render=${recaptchaSiteKey}`}
+          strategy="afterInteractive"
+        />
+      )}
+      <Suspense>
+        <CatalogSearch
+          products={clientProducts}
+          status={status}
+          trebolesUrl={trebolesUrl}
+          mlLinks={mlLinks}
+        />
+      </Suspense>
+    </>
   );
 }

@@ -257,7 +257,25 @@ export function CatalogSearch({ products, status, trebolesUrl, mlLinks = {} }: P
       setPlateVehicle(null);
       startPlateTransition(async () => {
         try {
-          const res = await fetch(`/api/catalog/plate?plate=${encodeURIComponent(q)}`);
+          const headers: Record<string, string> = {};
+          const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+          if (siteKey && typeof window !== "undefined") {
+            const token = await Promise.race([
+              new Promise<string>((resolve, reject) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (window as any).grecaptcha?.ready(async () => {
+                  try {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const t = await (window as any).grecaptcha.execute(siteKey, { action: "plate_search" });
+                    resolve(t as string);
+                  } catch (e) { reject(e); }
+                });
+              }),
+              new Promise<string>((_, reject) => setTimeout(() => reject(new Error("timeout")), 5000)),
+            ]).catch(() => "");
+            if (token) headers["X-Recaptcha-Token"] = token;
+          }
+          const res = await fetch(`/api/catalog/plate?plate=${encodeURIComponent(q)}`, { headers });
           const data = (await res.json()) as SpecPartsPlateResponse;
           if (!res.ok || data.error || !data.brand) {
             setPlateError(data.error || "No se encontró vehículo para esa patente");
