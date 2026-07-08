@@ -1079,9 +1079,12 @@ Wrapper `max-w-4xl`. Items en orden:
    Fuelle Universal de Transmisión, Extractor, Pinza, Fuelle Dirección).
    Cada fila: thumb del producto + botones "Flyer" + "Video". Escanea
    `/public/downloads/productos/<slug>/` y toma el primer PDF/MP4.
-7-8. **Recursos gated** — Banco de imágenes (.zip) + Base de datos
-   (.xlsx). Cada fila usa `<details>` nativo: click expande el form
-   inline (nombre, empresa, email, teléfono, "a quién le compra
+7-8. **Recursos gated** — ⚠️ **Temporalmente ocultos** (array
+   `recursosGated` en `src/data/descargas.ts` está vacío). Originalmente:
+   Banco de imágenes (.zip) + Base de datos (.xlsx). Para reactivarlos,
+   descomentar/agregar las entradas en ese array. Cada fila usa `<details>`
+   nativo: click expande el form inline (nombre, empresa, email, teléfono,
+   "a quién le compra
    Griffo"). Sin modal, sin JS extra. **Los forms se muestran
    siempre** aunque el archivo no esté subido — capturan leads y
    muestran "te lo mandamos por email" si el archivo no existe.
