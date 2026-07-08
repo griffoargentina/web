@@ -7,7 +7,6 @@ import { listCatalog } from "@/lib/api/specparts";
 import { stripProductsForClient } from "@/lib/catalog/utils";
 import { resolveImageUrl } from "@/lib/catalogo-imagenes-store";
 import { readLinksMap } from "@/lib/mercadolibre-links-store";
-import { generateCatalogToken } from "@/lib/catalog-token";
 import type { CatalogProduct } from "@/types/specparts";
 
 export const revalidate = 1800;
@@ -68,7 +67,6 @@ export default async function CatalogoPage() {
 
   const trebolesUrl = await resolveImageUrl("medidas-treboles").catch(() => undefined);
   const mlLinks = await readLinksMap().catch(() => ({}));
-  const plateToken = generateCatalogToken();
 
   // Aligerar el payload al browser — sacamos ~6 campos que nunca se usan
   // en UI ni en búsqueda. Reduce ~10-15% el JSON serializado en el HTML.
@@ -81,7 +79,6 @@ export default async function CatalogoPage() {
         status={status}
         trebolesUrl={trebolesUrl}
         mlLinks={mlLinks}
-        plateToken={plateToken}
       />
     </Suspense>
   );

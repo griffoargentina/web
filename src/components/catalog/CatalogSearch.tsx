@@ -54,8 +54,6 @@ type Props = {
   trebolesUrl?: string;
   /** Mapa código → link de Mercado Libre (subido por admin). */
   mlLinks?: Record<string, string>;
-  /** Token firmado por el servidor para autenticar búsquedas por patente. */
-  plateToken?: string;
 };
 
 const TABS: { key: TabKey; label: string }[] = [
@@ -171,7 +169,7 @@ function buildQueryString(state: {
   return p.toString();
 }
 
-export function CatalogSearch({ products, status, trebolesUrl, mlLinks = {}, plateToken }: Props) {
+export function CatalogSearch({ products, status, trebolesUrl, mlLinks = {} }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -259,9 +257,7 @@ export function CatalogSearch({ products, status, trebolesUrl, mlLinks = {}, pla
       setPlateVehicle(null);
       startPlateTransition(async () => {
         try {
-          const headers: Record<string, string> = {};
-          if (plateToken) headers["X-Catalog-Token"] = plateToken;
-          const res = await fetch(`/api/catalog/plate?plate=${encodeURIComponent(q)}`, { headers });
+          const res = await fetch(`/api/catalog/plate?plate=${encodeURIComponent(q)}`);
           const data = (await res.json()) as SpecPartsPlateResponse;
           if (!res.ok || data.error || !data.brand) {
             setPlateError(data.error || "No se encontró vehículo para esa patente");
@@ -273,7 +269,7 @@ export function CatalogSearch({ products, status, trebolesUrl, mlLinks = {}, pla
         }
       });
     },
-    [plateToken, startPlateTransition],
+    [startPlateTransition],
   );
 
   // Al montar: si venimos con ?tab=patente&p=XXX, re-disparamos la búsqueda
