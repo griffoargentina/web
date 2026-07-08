@@ -579,11 +579,18 @@ params con brackets, usar **`https` nativo de Node + `zlib.gunzip`**, NUNCA
   corresponde a un destacado, `redirect()` server-side a `/productos/[slug]`.
 - `/api/catalog/products` — devuelve productos con `_searchText` pre-computado.
 - `/api/catalog/plate?plate=XXX` — identifica vehículo por patente.
-  Protegido con tres capas: (1) validación de formato argentino estricta
-  (ABC123 vieja o AB123CD Mercosur) antes de tocar SpecParts; (2) rate
-  limit por IP 10 req/min en Redis (fail-open); (3) caché Redis 7 días
-  por patente. Sin esto, los bots quemaban el cupo hourly de SpecParts
-  afectando a otros clientes del mismo API key (evidencia: 740 eventos AWS junio 2026).
+  Protegido con cuatro capas: (1) **reCAPTCHA v3** — el frontend genera
+  un token invisible (action=`plate_search`) y lo manda como header
+  `X-Recaptcha-Token`; el servidor lo verifica con Google (score ≥ 0.5)
+  antes de tocar SpecParts. Sin `RECAPTCHA_SECRET_KEY` configurada el
+  check es fail-open. Env vars: `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` (pública,
+  va en el Script de la página) y `RECAPTCHA_SECRET_KEY` (secreta, solo
+  servidor). Script cargado en `/catalogo` con `strategy="afterInteractive"`.
+  (2) validación de formato argentino estricta (ABC123 vieja o AB123CD
+  Mercosur) antes de tocar SpecParts; (3) rate limit por IP 10 req/min
+  en Redis (fail-open); (4) caché Redis 7 días por patente.
+  Sin esto, los bots quemaban el cupo hourly de SpecParts afectando a
+  otros clientes del mismo API key (evidencia: 740 eventos AWS junio 2026).
   Solo se cachean resultados con vehículo encontrado (`brand` presente),
   por 7 días. Resultados vacíos no se cachean — el próximo intento siempre
   consulta SpecParts. Clave `plate:v3:`.
