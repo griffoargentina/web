@@ -130,8 +130,12 @@ export async function GET(request: Request) {
     // 429 de SpecParts: cupo agotado por bots previos, no es error nuestro
     const isThrottle = message.includes("429");
     if (isThrottle) saveLastPlateStatus(false, true).catch(() => {});
+    // Nunca exponer el mensaje interno al frontend — puede incluir URLs o detalles del proveedor.
+    const clientError = isThrottle
+      ? "Servicio temporalmente no disponible. Intentá en unos minutos."
+      : "No pudimos consultar la patente. Intentá de nuevo.";
     return NextResponse.json(
-      { error: isThrottle ? "Servicio temporalmente no disponible. Intentá en unos minutos." : message },
+      { error: clientError },
       { status: isThrottle ? 503 : 500 },
     );
   }
