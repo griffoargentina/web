@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { identifyPlate } from "@/lib/api/specparts";
 import { getRedis } from "@/lib/kv";
+import { verifyCatalogToken } from "@/lib/catalog-token";
 import type { SpecPartsPlateResponse } from "@/types/specparts";
 
 export const runtime = "nodejs";
@@ -82,6 +83,11 @@ async function saveToCache(plate: string, data: SpecPartsPlateResponse): Promise
 }
 
 export async function GET(request: Request) {
+  const token = request.headers.get("X-Catalog-Token");
+  if (!verifyCatalogToken(token)) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
+
   const rawPlate = new URL(request.url).searchParams.get("plate");
   const plate = rawPlate?.trim().toUpperCase().replace(/\s+/g, "") ?? "";
 
