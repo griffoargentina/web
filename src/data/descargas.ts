@@ -74,21 +74,5 @@ export const materialPorProducto: MaterialProducto[] = [
   },
 ];
 
-export const recursosGated: RecursoGated[] = [
-  {
-    id: "banco-imagenes",
-    titulo: "Banco de imágenes",
-    descripcion:
-      "Accedé a la biblioteca completa de imágenes de producto en alta resolución, listas para usar en tus publicaciones, catálogos y redes.",
-    fileUrl: "/downloads/banco-de-imagenes.zip",
-    tipo: "ZIP",
-  },
-  {
-    id: "base-datos-productos",
-    titulo: "Base de datos de productos",
-    descripcion:
-      "Planilla con el listado completo de productos Griffo: códigos, descripciones, aplicaciones y equivalencias, actualizada al último trimestre.",
-    fileUrl: "/downloads/base-de-datos-productos.xlsx",
-    tipo: "XLSX",
-  },
-];
+// Vacío por ahora — los items se reactivarán cuando estén disponibles para entregar.
+export const recursosGated: RecursoGated[] = [];
