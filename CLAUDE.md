@@ -658,6 +658,10 @@ params con brackets, usar **`https` nativo de Node + `zlib.gunzip`**, NUNCA
   shareable, back/forward del browser lo restaura. Debounce 200ms para
   text inputs. Ver `readStateFromParams`/`buildQueryString` en
   `CatalogSearch.tsx`.
+  **Excepción**: el tab `patente` y el parámetro `p` (patente) **nunca se
+  escriben en la URL** — quedan solo en memoria del componente. La URL
+  permanece en `/catalogo` sin parámetros visibles durante búsquedas por
+  patente. No revertir esto.
 - Tab Medidas: sidebar **oculto** (la tabla tiene su propia dinámica).
 - Mobile: drawer con botón "Filtros" y badge del count activo.
 
