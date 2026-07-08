@@ -6,28 +6,28 @@ function secret(): string {
   return process.env.ADMIN_PASSWORD ?? "griffo-catalog-fallback-insecure";
 }
 
-function tokenForHour(hour: number): string {
+function tokenForDay(day: number): string {
   return createHmac("sha256", secret())
-    .update(`griffo-catalog-plate-token:${hour}`)
+    .update(`griffo-catalog-plate-token:${day}`)
     .digest("hex")
     .slice(0, TOKEN_LEN);
 }
 
-/** Genera un token válido para la hora actual. Server-only. */
+/** Genera un token válido para el día UTC actual. Server-only. */
 export function generateCatalogToken(): string {
-  const hour = Math.floor(Date.now() / 1000 / 3600);
-  return tokenForHour(hour);
+  const day = Math.floor(Date.now() / 1000 / 86400);
+  return tokenForDay(day);
 }
 
 /**
- * Verifica el token. Acepta la hora actual y la anterior para tolerar
- * tokens generados justo antes del cambio de hora.
+ * Verifica el token. Acepta el día UTC actual y el anterior para tolerar
+ * páginas cacheadas por ISR (hasta 30 min) que crucen la medianoche.
  */
 export function verifyCatalogToken(token: string | null | undefined): boolean {
   if (!token || token.length !== TOKEN_LEN) return false;
-  const hour = Math.floor(Date.now() / 1000 / 3600);
-  for (const h of [hour, hour - 1]) {
-    const expected = tokenForHour(h);
+  const day = Math.floor(Date.now() / 1000 / 86400);
+  for (const d of [day, day - 1]) {
+    const expected = tokenForDay(d);
     try {
       if (timingSafeEqual(Buffer.from(token), Buffer.from(expected))) return true;
     } catch {
