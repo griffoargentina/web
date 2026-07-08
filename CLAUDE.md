@@ -312,9 +312,10 @@ Uso de route groups para separar chrome del login vs chrome del
 portal:
 
 - `/cuenta/login/page.tsx` → URL `/cuenta/login`. Form con email +
-  password, sin subtítulo (a pedido de la cliente). Submit hace
-  login mock (setea `griffo:b2b:session` en localStorage con
-  `{email, loggedAt}`) y redirige a `/cuenta`. Cuando Firebase
+  password, sin subtítulo ni pistas sobre la fórmula de contraseña
+  (se eliminó el banner "Modo demo / GRIFFO+CUIT" por seguridad).
+  Submit hace login mock (setea `griffo:b2b:session` en localStorage
+  con `{email, loggedAt}`) y redirige a `/cuenta`. Cuando Firebase
   esté activo, se reemplaza el submit por `signInWithEmailAndPassword`.
 - `/cuenta/(portal)/layout.tsx` — encabezado con nombre del cliente +
   badge "🚧 Modo demo" + `CerrarSesionButton` + `PortalNav`.
