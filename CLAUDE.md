@@ -580,7 +580,7 @@ params con brackets, usar **`https` nativo de Node + `zlib.gunzip`**, NUNCA
 - `/api/catalog/products` — devuelve productos con `_searchText` pre-computado.
 - `/api/catalog/plate?plate=XXX` — identifica vehículo por patente.
   Protegido con cuatro capas: (1) **token firmado** `X-Catalog-Token`
-  (HMAC-SHA256, ventana horaria, stateless) — el servidor lo genera al
+  (HMAC-SHA256, ventana diaria, stateless) — el servidor lo genera al
   renderizar `/catalogo` (`generateCatalogToken` en `src/lib/catalog-token.ts`)
   y el frontend lo manda como header; sin token → 403 sin tocar SpecParts.
   Bloquea bots que llaman directo a la URL sin pasar por la web. (2)
@@ -807,7 +807,7 @@ URLs indexables en Google (cada producto tiene una sola URL canónica).
 
 ### Archivos clave
 
-- `src/lib/catalog-token.ts` — genera y verifica el token HMAC de patente (`generateCatalogToken`, `verifyCatalogToken`). Server-only, stateless, ventana horaria de 1h.
+- `src/lib/catalog-token.ts` — genera y verifica el token HMAC de patente (`generateCatalogToken`, `verifyCatalogToken`). Server-only, stateless, ventana diaria (día UTC actual + anterior). Ventana de 24h cubre la ISR de 30min sin riesgo de expiración.
 - `src/lib/api/specparts.ts` — cliente HTTP (https nativo + zlib + cache).
 - `src/lib/catalog/utils.ts` — helpers puros (normalize, 5 búsquedas,
   buildVehicleTree, buildMeasureRows, getAttrValue, getMercadoLibreUrl).
