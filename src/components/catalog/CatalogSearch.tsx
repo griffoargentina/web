@@ -147,10 +147,10 @@ function buildQueryString(state: {
   filters: CatalogFilters;
 }): string {
   const p = new URLSearchParams();
-  if (state.tab !== "palabra") p.set("tab", state.tab);
+  // La patente no se escribe en la URL — queda solo en memoria del componente.
+  if (state.tab !== "palabra" && state.tab !== "patente") p.set("tab", state.tab);
 
   if (state.tab === "palabra" && state.keyword.trim()) p.set("q", state.keyword.trim());
-  if (state.tab === "patente" && state.plate.trim()) p.set("p", state.plate.trim().toUpperCase());
   if (state.tab === "codigo" && state.code.trim()) p.set("c", state.code.trim());
   if (state.tab === "vehiculo") {
     if (state.brand) p.set("b", state.brand);
