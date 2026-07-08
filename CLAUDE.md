@@ -1370,6 +1370,7 @@ anónima**. Es suficiente para decisiones de catálogo y más privacy-friendly.
   impresos en packaging (QRs físicos) apuntan a las landings sin
   prefix `/productos/`. Hoy:
   * `/direccionuniversal` → `/productos/fuelle-universal-de-direccion`
+  * `/universaldireccion` → `/productos/fuelle-universal-de-direccion`
   * `/maquina-montadora-de-fuelles` → `/productos/maquina-montadora-de-fuelles`
   * `/kit-de-fuelles-universales-para-homocineticas` → `/productos/...`
   * `/kit-de-proteccion-para-suspension-deportiva` → `/productos/...`
