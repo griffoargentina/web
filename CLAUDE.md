@@ -596,6 +596,10 @@ params con brackets, usar **`https` nativo de Node + `zlib.gunzip`**, NUNCA
   del admin (`runHealthChecks`) lee esta key para mostrar un semáforo
   "Búsqueda por patente" sin consumir cupo de la API — verde si la
   última consulta fue exitosa, rojo si SpecParts devolvió 429.
+  **Errores al frontend**: el handler nunca reenvía el mensaje interno
+  de excepción (que incluye la URL y el status de SpecParts). Siempre
+  devuelve un mensaje genérico: 503 para throttle, 500 genérico para
+  el resto. El error real queda en el log del admin. No revertir esto.
 
 ### Búsqueda — 5 tabs
 
