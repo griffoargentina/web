@@ -733,7 +733,10 @@ detalle del producto. Devuelve `{ ubicaciones, lados, tipoDireccion? }`.
 - **Transmisión**: en "Ubicación" sólo deja LADO CAJA / LADO RUEDA.
 
 **Nota sobre atributos de SpecParts**:
-- `observation` a nivel producto siempre viene `null` en `/part/list`.
+- `observation` a nivel producto: SpecParts empezó a poblarlo (julio 2026)
+  con notas técnicas adicionales (ej. "Diámetro del cuerpo 61 mm / Diámetro
+  del encastre carrocería 14 mm"). Ya NO se stripea en `stripForClient` y se
+  muestra en la ficha del producto como sección "Observaciones técnicas".
 - `SpecPartsVehicle` no expone `observation` ni `engine` — solo están
   en el admin de SpecParts, no en la API pública.
 - Para kits (Suspensión), SpecParts no carga atributos de tope —
@@ -776,10 +779,14 @@ Layout por prioridad de info (de más a menos relevante):
    `isDireccion` = category incluye "direc";
    `hasBocaMenorExplicit` = algún attr tiene "boca menor" como substring
    (fallback para fuelles simples con "Diámetro Interior" ambiguo).
-6. Componentes del kit (si aplica) — inline
-7. **Referencias OEM** — chips `MARCA CÓDIGO` filtrados de `cross[]` y
+6. **Observaciones técnicas** — campo `product.observation` de SpecParts.
+   Solo se muestra si no es null. El texto se parte por `/` y cada fragmento
+   se muestra como ítem de lista con borde izquierdo en accent (celeste).
+   SpecParts empezó a poblar este campo en julio 2026 con medidas adicionales.
+7. Componentes del kit (si aplica) — inline
+8. **Referencias OEM** — chips `MARCA CÓDIGO` filtrados de `cross[]` y
    `reference[]` donde `oem === 1`. Solo aparece si hay datos en SpecParts.
-8. Vehículos compatibles — **masonry CSS columns** (cada card
+9. Vehículos compatibles — **masonry CSS columns** (cada card
    ocupa solo el alto que necesita), ordenados por cantidad desc
 
 ### Productos destacados → landing rica
