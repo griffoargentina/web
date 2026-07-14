@@ -190,7 +190,31 @@ export default async function ProductoCatalogoPage({ params }: { params: Params 
             </section>
           ) : null}
 
-          {/* 6. Componentes del kit (si aplica) */}
+          {/* 6. Observaciones técnicas (campo libre de SpecParts) */}
+          {product.observation ? (
+            <section>
+              <h2 className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                Observaciones técnicas
+              </h2>
+              <div className="relative rounded-lg border border-[#b8e4f0] bg-[#eef7fb] px-4 py-3">
+                <div className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-sm bg-accent" />
+                <ul className="ml-3 space-y-1">
+                  {product.observation
+                    .split("/")
+                    .map((s) => s.trim())
+                    .filter(Boolean)
+                    .map((item, i) => (
+                      <li key={i} className="flex items-baseline gap-2 text-xs font-semibold text-[#0a2b3d]">
+                        <span className="text-accent text-base leading-none">·</span>
+                        {item}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            </section>
+          ) : null}
+
+          {/* 7. Componentes del kit (si aplica) */}
           {componenteAttr ? (
             <p className="text-xs text-gray-500">
               <span className="font-bold uppercase tracking-wide">{componenteAttr.name}: </span>
@@ -200,7 +224,7 @@ export default async function ProductoCatalogoPage({ params }: { params: Params 
             </p>
           ) : null}
 
-          {/* 7. Referencias OEM */}
+          {/* 8. Referencias OEM */}
           {(() => {
             const oems = [
               ...(product.cross ?? []).filter((c) => c.oem === 1),

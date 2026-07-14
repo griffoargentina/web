@@ -14,9 +14,10 @@ import type {
  * Campos de SpecParts que nunca usamos en el cliente — se stripean antes
  * de serializar el payload al browser para reducir ~10-15% el HTML.
  *
- * Algunos vienen siempre vacíos (seller, company_id, observation,
- * national_industry), otros son redundantes (safe_code = code sin
- * guiones) o no-renderizados (oem top-level). El resto del shape queda
+ * Algunos vienen siempre vacíos (seller, company_id, national_industry),
+ * otros son redundantes (safe_code = code sin guiones) o no-renderizados
+ * (oem top-level). El campo `observation` se mantiene — SpecParts lo
+ * empezó a poblar y se muestra en la ficha del producto. El resto del shape queda
  * igual — sí mantenemos cross, reference, ean, components porque
  * alimentan la búsqueda por palabra (ver buildSearchText).
  *
@@ -26,7 +27,6 @@ import type {
 export function stripForClient(p: CatalogProduct): CatalogProduct {
   const {
     safe_code: _safe,
-    observation: _obs,
     oem: _oem,
     national_industry: _nat,
     seller: _sel,
