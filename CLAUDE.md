@@ -672,6 +672,10 @@ params con brackets, usar **`https` nativo de Node + `zlib.gunzip`**, NUNCA
   patente. No revertir esto.
 - Tab Medidas: sidebar **oculto** (la tabla tiene su propia dinámica).
 - Mobile: drawer con botón "Filtros" y badge del count activo.
+- **Orden de resultados**: `sortResultProducts()` en `filters.ts` aplica dos
+  niveles sobre el array ya filtrado: (1) línea — Dirección → Transmisión →
+  Suspensión → otros; (2) código alfanumérico natural dentro de cada línea.
+  Así "213" muestra 121-32, 121-32A … 213-12, 213-32C … en orden, sin saltos.
 
 ### Sticky header del buscador
 
@@ -825,7 +829,7 @@ URLs indexables en Google (cada producto tiene una sola URL canónica).
 - `src/lib/catalog/utils.ts` — helpers puros (normalize, 5 búsquedas,
   buildVehicleTree, buildMeasureRows, getAttrValue, getMercadoLibreUrl).
 - `src/lib/catalog/filters.ts` — tipos, matchesFilters, applyFilters,
-  computeFacets (con exclusión de propia facet).
+  sortResultProducts, computeFacets (con exclusión de propia facet).
 - `src/data/featured-products.ts` — mapeo SKU → slug destacado.
 - `src/types/specparts.ts` — tipos TS del schema de la API.
 - `src/components/catalog/CatalogSearch.tsx` — componente principal (tabs +
