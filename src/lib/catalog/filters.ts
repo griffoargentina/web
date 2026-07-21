@@ -256,6 +256,32 @@ export function applyFilters(products: CatalogProduct[], f: CatalogFilters): Cat
 }
 
 /* -------------------------------------------------------------------------- */
+/*  Ordenamiento de resultados                                                  */
+/* -------------------------------------------------------------------------- */
+
+function linePriority(category: string): number {
+  const c = category.toLowerCase();
+  if (c.includes("direc")) return 0;
+  if (c.includes("transm") || c.includes("semiej")) return 1;
+  if (c.includes("suspen") || c.includes("tope")) return 2;
+  return 3;
+}
+
+/**
+ * Ordena la grilla de resultados con dos niveles:
+ *   1. Línea: Dirección → Transmisión → Suspensión → otros
+ *   2. Código: alfanumérico natural (213-12 < 213-32C, 121-32 < 213-12)
+ */
+export function sortResultProducts(products: CatalogProduct[]): CatalogProduct[] {
+  return [...products].sort((a, b) => {
+    const la = linePriority(a.category ?? "");
+    const lb = linePriority(b.category ?? "");
+    if (la !== lb) return la - lb;
+    return (a.code ?? "").localeCompare(b.code ?? "", "es", { numeric: true });
+  });
+}
+
+/* -------------------------------------------------------------------------- */
 /*  Facets (con contadores)                                                    */
 /* -------------------------------------------------------------------------- */
 

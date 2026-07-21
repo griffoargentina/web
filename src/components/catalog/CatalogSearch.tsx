@@ -29,6 +29,7 @@ import {
 } from "@/lib/catalog/utils";
 import {
   applyFilters,
+  sortResultProducts,
   countActiveFilters,
   emptyFilters,
   hasActiveFilters,
@@ -399,6 +400,10 @@ export function CatalogSearch({ products, status, trebolesUrl, mlLinks = {} }: P
     () => applyFilters(baseResults, filters),
     [baseResults, filters],
   );
+  const sortedResults = useMemo(
+    () => sortResultProducts(filteredResults),
+    [filteredResults],
+  );
 
   const showSidebar = tab !== "medidas";
   const activeFilters = countActiveFilters(filters);
@@ -636,7 +641,7 @@ export function CatalogSearch({ products, status, trebolesUrl, mlLinks = {} }: P
             ) : null}
             {tabState.kind === "results" ? (
               <ResultsGrid
-                results={filteredResults}
+                results={sortedResults}
                 total={baseResults.length}
                 filtersActive={hasActiveFilters(filters)}
                 onClearFilters={onClearFilters}
