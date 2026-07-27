@@ -498,7 +498,9 @@ function addBaseSheet(wb: ExcelJS.Workbook, products: CatalogProduct[]): void {
     row.commit();
   }
 
-  // Build vehicle → product-code map (first-wins per column)
+  // Build vehicle → product-code map (acumula todos los códigos por columna,
+  // separados por espacio — no first-wins para que un vehículo con múltiples
+  // productos en la misma celda los muestre todos).
   type VehicleEntry = { v: SpecPartsVehicle; codes: Map<number, string> };
   const vehicleMap = new Map<string, VehicleEntry>();
 
@@ -512,7 +514,8 @@ function addBaseSheet(wb: ExcelJS.Workbook, products: CatalogProduct[]): void {
       ].join("||");
       if (!vehicleMap.has(key)) vehicleMap.set(key, { v, codes: new Map() });
       const entry = vehicleMap.get(key)!;
-      if (!entry.codes.has(colIdx)) entry.codes.set(colIdx, p.code);
+      const prev = entry.codes.get(colIdx);
+      entry.codes.set(colIdx, prev ? `${prev} ${p.code}` : p.code);
     }
   }
 
