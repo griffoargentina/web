@@ -1003,9 +1003,12 @@ Grupos:
   al último snapshot si SpecParts no responde (ver nivel 4 del cache
   chain en `src/lib/api/specparts.ts`). Lib: `src/lib/catalog-backup.ts`.
   La hoja **Base** es una matriz vehículo × tipo de producto (14 columnas
-  fijas, freeze en J7, 6 filas de encabezado con colores por sistema):
+  fijas, freeze en K7, 6 filas de encabezado con colores por sistema):
   Dirección (fuelle cremallera DER/IZQ), Suspensión (kit+tope y tope
   DEL/TRA) y Transmisión (fuelle/kit semieje × DER/IZQ × CAJA/RUEDA).
+  Columnas de vehículo A-G: Marca, Modelo base, Modelo, Versión, Año
+  desde, Año hasta, **Cód. Promotive** (`v.code` de SpecParts — puede
+  venir vacío si SpecParts no lo carga). Separadores H-J, productos K+.
   Cada celda con código tiene fondo verde claro + negrita; celdas vacías
   sin relleno. Clasificación en `getProductBaseColIndex()` usando
   `getDisplayApplication()`. First-wins por vehículo+columna.
