@@ -101,8 +101,18 @@ export async function regenerateCatalogSnapshot(): Promise<CatalogSnapshot> {
   const jsonBlob = JSON.stringify(products);
   const xlsxBuffer = await buildXlsx(products);
 
-  // Overwrite cualquier snapshot del mismo día — así el cron diario no
-  // acumula duplicados si corre dos veces por retry.
+  // Si hoy ya hay un snapshot, borrar los blobs antes de subir los nuevos.
+  // allowOverwrite actualiza el contenido pero el CDN de Vercel puede seguir
+  // sirviendo la versión cacheada. Borrar + subir fuerza la invalidación.
+  const existingBeforeUpload = await readSnapshots();
+  const todayExisting = existingBeforeUpload.find((s) => s.date === today);
+  if (todayExisting) {
+    await Promise.all([
+      del(todayExisting.jsonUrl).catch(() => undefined),
+      del(todayExisting.xlsxUrl).catch(() => undefined),
+    ]);
+  }
+
   const [jsonUpload, xlsxUpload] = await Promise.all([
     put(`catalog-backup/griffo-catalog-${today}.json`, jsonBlob, {
       access: "public",
@@ -129,7 +139,7 @@ export async function regenerateCatalogSnapshot(): Promise<CatalogSnapshot> {
     productCount: products.length,
   };
 
-  const existing = await readSnapshots();
+  const existing = existingBeforeUpload;
   const merged = [
     snapshot,
     ...existing.filter((s) => s.date !== today),
