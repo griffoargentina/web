@@ -1002,6 +1002,10 @@ Grupos:
   historial. **Además funciona como fallback**: `listCatalog()` cae
   al último snapshot si SpecParts no responde (ver nivel 4 del cache
   chain en `src/lib/api/specparts.ts`). Lib: `src/lib/catalog-backup.ts`.
+  **Al regenerar**: los blobs del día actual se borran explícitamente
+  (`del()`) ANTES de subir los nuevos — `allowOverwrite` solo actualiza
+  el contenido pero el CDN de Vercel puede servir la versión cacheada,
+  así que borrar + subir garantiza que el archivo descargado sea fresco.
   La hoja **Base** es una matriz vehículo × tipo de producto (14 columnas
   fijas, freeze en K7, 6 filas de encabezado con colores por sistema):
   Dirección (fuelle cremallera DER/IZQ), Suspensión (kit+tope y tope
