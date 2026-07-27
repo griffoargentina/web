@@ -354,7 +354,7 @@ function getProductBaseColIndex(p: CatalogProduct): number | null {
 function addBaseSheet(wb: ExcelJS.Workbook, products: CatalogProduct[]): void {
   const ws = wb.addWorksheet("Base");
 
-  const PROD_START = 10; // Column J (1-based)
+  const PROD_START = 11; // Column K (1-based) — G es Cód. Promotive, H-J separadores
   const N_PROD = 14;
   const N_HEADER = 6;
 
@@ -388,9 +388,10 @@ function addBaseSheet(wb: ExcelJS.Workbook, products: CatalogProduct[]): void {
     { sistema: "Transmisión", pieza: "Kit fuelle semieje", posicion: "RUEDA", lado: "IZQ", color: C_TRA },
   ];
 
-  // Column widths: A-F vehicle, G-I narrow separator, J-W product cols
+  // Column widths: A-F vehicle data, G Cód. Promotive, H-J narrow separator, K-X product cols
   [16, 20, 24, 18, 10, 10].forEach((w, i) => { ws.getColumn(i + 1).width = w; });
-  for (let i = 7; i <= 9; i++) ws.getColumn(i).width = 2;
+  ws.getColumn(7).width = 16; // G: Cód. Promotive
+  for (let i = 8; i <= 10; i++) ws.getColumn(i).width = 2;
   for (let i = 0; i < N_PROD; i++) ws.getColumn(PROD_START + i).width = 13;
 
   function hdrCell(cell: ExcelJS.Cell, color: string, value: string | number): void {
@@ -472,7 +473,7 @@ function addBaseSheet(wb: ExcelJS.Workbook, products: CatalogProduct[]): void {
   {
     const row = ws.getRow(6);
     row.height = 24;
-    const vehLabels = ["Marca", "Modelo base", "Modelo", "Versión", "Año desde", "Año hasta"];
+    const vehLabels = ["Marca", "Modelo base", "Modelo", "Versión", "Año desde", "Año hasta", "Cód. Promotive"];
     for (let i = 0; i < vehLabels.length; i++) {
       const cell = row.getCell(i + 1);
       cell.value = vehLabels[i];
@@ -496,7 +497,7 @@ function addBaseSheet(wb: ExcelJS.Workbook, products: CatalogProduct[]): void {
     for (const v of p.vehicles ?? []) {
       const key = [
         v.brand, v.master_model, v.model, v.version,
-        v.sold_from_year, v.sold_until_year,
+        v.sold_from_year, v.sold_until_year, v.code ?? "",
       ].join("||");
       if (!vehicleMap.has(key)) vehicleMap.set(key, { v, codes: new Map() });
       const entry = vehicleMap.get(key)!;
@@ -526,6 +527,7 @@ function addBaseSheet(wb: ExcelJS.Workbook, products: CatalogProduct[]): void {
     row.getCell(4).value = v.version;
     row.getCell(5).value = v.sold_from_year;
     row.getCell(6).value = v.sold_until_year;
+    row.getCell(7).value = v.code ?? "";
     for (let c = 1; c <= N_PROD; c++) {
       const code = codes.get(c);
       if (code) {
@@ -540,5 +542,5 @@ function addBaseSheet(wb: ExcelJS.Workbook, products: CatalogProduct[]): void {
   }
 
   // Freeze: columns A-I (9 cols) and rows 1-6 (6 header rows)
-  ws.views = [{ state: "frozen", xSplit: 9, ySplit: 6, topLeftCell: "J7", activeCell: "J7" }];
+  ws.views = [{ state: "frozen", xSplit: 10, ySplit: 6, topLeftCell: "K7", activeCell: "K7" }];
 }
