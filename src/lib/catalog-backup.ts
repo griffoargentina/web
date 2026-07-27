@@ -95,15 +95,18 @@ export async function regenerateCatalogSnapshot(): Promise<CatalogSnapshot> {
     throw new Error("SpecParts devolvió 0 productos — no se genera snapshot vacío");
   }
 
-  const today = new Date().toISOString().slice(0, 10);
-  const generatedAt = new Date().toISOString();
+  const now = new Date();
+  const today = now.toISOString().slice(0, 10);
+  const generatedAt = now.toISOString();
+  // Sufijo de timestamp para garantizar URL única — evita que el CDN de
+  // Vercel sirva una versión cacheada de un archivo con el mismo nombre.
+  const ts = now.toISOString().slice(11, 19).replace(/:/g, ""); // ej. "143022"
+  const fileBase = `catalog-backup/griffo-catalog-${today}-${ts}`;
 
   const jsonBlob = JSON.stringify(products);
   const xlsxBuffer = await buildXlsx(products);
 
-  // Si hoy ya hay un snapshot, borrar los blobs antes de subir los nuevos.
-  // allowOverwrite actualiza el contenido pero el CDN de Vercel puede seguir
-  // sirviendo la versión cacheada. Borrar + subir fuerza la invalidación.
+  // Borrar los blobs del día anterior (si existen) antes de subir los nuevos.
   const existingBeforeUpload = await readSnapshots();
   const todayExisting = existingBeforeUpload.find((s) => s.date === today);
   if (todayExisting) {
@@ -114,18 +117,16 @@ export async function regenerateCatalogSnapshot(): Promise<CatalogSnapshot> {
   }
 
   const [jsonUpload, xlsxUpload] = await Promise.all([
-    put(`catalog-backup/griffo-catalog-${today}.json`, jsonBlob, {
+    put(`${fileBase}.json`, jsonBlob, {
       access: "public",
       contentType: "application/json",
       addRandomSuffix: false,
-      allowOverwrite: true,
     }),
-    put(`catalog-backup/griffo-catalog-${today}.xlsx`, xlsxBuffer, {
+    put(`${fileBase}.xlsx`, xlsxBuffer, {
       access: "public",
       contentType:
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       addRandomSuffix: false,
-      allowOverwrite: true,
     }),
   ]);
 
