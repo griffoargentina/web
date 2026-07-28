@@ -515,7 +515,7 @@ function addBaseSheet(wb: ExcelJS.Workbook, products: CatalogProduct[]): void {
       if (!vehicleMap.has(key)) vehicleMap.set(key, { v, codes: new Map() });
       const entry = vehicleMap.get(key)!;
       const prev = entry.codes.get(colIdx);
-      entry.codes.set(colIdx, prev ? `${prev} ${p.code}` : p.code);
+      entry.codes.set(colIdx, prev ? `${prev}; ${p.code}` : p.code);
     }
   }
 
