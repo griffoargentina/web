@@ -1018,7 +1018,7 @@ Grupos:
   sin relleno. Clasificación en `getProductBaseColIndex()` usando
   `getDisplayApplication()`. Si un vehículo tiene **múltiples productos**
   en la misma celda, se muestran todos separados por espacio (ej.
-  `063-32 135-32C`) — no hay first-wins, para que el Excel coincida con
+  `063-32; 135-32C`) — no hay first-wins, para que el Excel coincida con
   la web.
   Sección **"Probar crons"** abajo del historial: dispara los 3 cron
   jobs server-to-server con el CRON_SECRET real
