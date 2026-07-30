@@ -1051,11 +1051,18 @@ Grupos:
   * `/admin/clientes/[code]/debug-cuenta` — vista raw del payload del
     ERP para debuggear casos raros de cuenta corriente.
 - `/admin/pedidos` — Lista de pedidos B2B capturados en Redis. Columnas:
-  ID web, cliente, fecha, estado, items, total, mail enviado.
+  ID web, cliente, **sucursal** (naranja "⚠ sin sucursal" si vacía),
+  fecha, estado, items, total, mail enviado.
   `AdminPedidoRow` expande acciones inline (cambiar estado, cancelar,
   copiar nº Bejerman). `PedidosNotifEmailBox` arriba para configurar
   la dirección de mail que recibe notificaciones de pedidos nuevos.
 - `/admin/pedidos/[id]` — Detalle de un pedido con todo el desglose.
+  `AdminPedidoActions` incluye `EditarSucursalForm` (siempre visible,
+  independiente del estado) para corregir `warehouseDescription` vía
+  `POST /api/admin/pedidos/[id]/patch-warehouse` → `patchWarehouse()`
+  en `pedidos.ts`. Útil para pedidos donde la sucursal quedó vacía.
+  **Nota**: pedidos ERP desactivados del portal cliente (ver sección
+  Portal B2B → pedidos) — solo se muestran pedidos Redis.
 - `/admin/listas-precios` — Sube/rota las listas de precios (PDF/XLSX)
   que descargan los clientes B2B. Al publicar una nueva, manda
   (opcionalmente) un mail a los clientes. Componente
