@@ -284,6 +284,22 @@ export async function cancelPedido(
   return pedido;
 }
 
+/** Elimina un pedido completamente de Redis (admin only). */
+export async function deletePedido(id: string): Promise<void> {
+  const redis = getRedis();
+  if (!redis) throw new Error("Redis no configurado");
+
+  const pedido = await getPedido(id);
+  if (!pedido) throw new Error(`Pedido ${id} no existe`);
+
+  await Promise.all([
+    redis.del(KEY_PREFIX + id),
+    redis.zrem(KEY_ALL, id),
+    redis.zrem(KEY_BY_CLIENT + pedido.clientId, id),
+    redis.zrem(KEY_BY_STATUS + pedido.status, id),
+  ]);
+}
+
 /** Actualiza la descripción de sucursal de un pedido (corrección manual desde el admin). */
 export async function patchWarehouse(
   id: string,

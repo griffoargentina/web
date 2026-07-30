@@ -7,6 +7,7 @@ import type { Pedido } from "@/types/pedido";
 import { PedidoStatusPill } from "@/components/cuenta/PedidoStatusPill";
 import {
   AdminCancelarForm,
+  EliminarPedidoButton,
   MarcarCargadoForm,
   MarcarEntregadoForm,
 } from "@/components/admin/AdminPedidoActions";
@@ -192,6 +193,12 @@ export function AdminPedidoRow({ pedido }: { pedido: Pedido }) {
                     onDone={handleAction}
                   />
                 )}
+                <div className="pt-2 border-t border-gray-200">
+                  <EliminarPedidoButton
+                    pedidoId={pedido.id}
+                    onDone={handleAction}
+                  />
+                </div>
               </div>
             </div>
           </td>

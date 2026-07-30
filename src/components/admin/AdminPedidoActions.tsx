@@ -68,6 +68,13 @@ export function AdminPedidoActions({
           onDone={() => router.refresh()}
         />
       )}
+
+      <div className="pt-4 border-t border-gray-200">
+        <EliminarPedidoButton
+          pedidoId={pedido.id}
+          onDone={() => router.push("/admin/pedidos")}
+        />
+      </div>
     </section>
   );
 }
@@ -455,6 +462,78 @@ export function MarcarEntregadoForm({
         </button>
       </div>
     </form>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Eliminar pedido (borrado permanente — admin only)                          */
+/* -------------------------------------------------------------------------- */
+
+export function EliminarPedidoButton({
+  pedidoId,
+  onDone,
+}: {
+  pedidoId: string;
+  onDone: () => void;
+}) {
+  const [confirming, setConfirming] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function doDelete() {
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/pedidos/${pedidoId}/delete`, {
+        method: "POST",
+      });
+      const data = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok || !data.ok) throw new Error(data.error ?? `Error ${res.status}`);
+      onDone();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al eliminar");
+      setSubmitting(false);
+      setConfirming(false);
+    }
+  }
+
+  if (!confirming) {
+    return (
+      <button
+        type="button"
+        onClick={() => setConfirming(true)}
+        className="inline-flex items-center gap-2 px-4 py-2 text-red-600 hover:text-red-800 font-semibold text-sm transition"
+      >
+        🗑 Eliminar pedido
+      </button>
+    );
+  }
+
+  return (
+    <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-3">
+      <p className="text-sm font-semibold text-red-900">
+        ¿Eliminar este pedido permanentemente? No se puede deshacer.
+      </p>
+      {error && <p className="text-xs text-red-700">{error}</p>}
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={doDelete}
+          disabled={submitting}
+          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-sm disabled:opacity-60 transition"
+        >
+          {submitting ? "Eliminando…" : "Sí, eliminar"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setConfirming(false)}
+          disabled={submitting}
+          className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-100 transition"
+        >
+          Cancelar
+        </button>
+      </div>
+    </div>
   );
 }
 
