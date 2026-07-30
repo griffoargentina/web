@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { listPedidosByClient } from "@/lib/pedidos";
-import { getPendingOrdersForClient } from "@/lib/api/bejerman";
 import { formatARS, formatDate } from "@/data/mock-b2b";
 import { getCurrentClient } from "@/lib/b2b/current-client";
 import { PedidoStatusPill } from "@/components/cuenta/PedidoStatusPill";
-import { NotaPedidoPdfButton } from "@/components/cuenta/NotaPedidoPdfButton";
+
+// TODO: reactivar getPendingOrdersForClient cuando el técnico del ERP corrija
+// el endpoint /ERP/clientes/<code>/pedidos — actualmente devuelve pedidos de
+// todos los clientes sin filtrar, lo que causa que un cliente vea pedidos de otros.
+// import { getPendingOrdersForClient } from "@/lib/api/bejerman";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mis pedidos" };
@@ -13,28 +16,8 @@ export default async function PedidosPage() {
   const client = await getCurrentClient();
   const clientId = client.client_id;
 
-  const [localPedidos, erpOrders] = await Promise.all([
-    listPedidosByClient(clientId, 200),
-    getPendingOrdersForClient(clientId),
-  ]);
-
-  /* Los pedidos del ERP que ya existen en local (mismo erpOrderNumber)
-     no se duplican — son el mismo pedido visto desde dos lados.
-     Normalizamos los ids (NFC, colapso de espacios) por si Bejerman
-     manda variantes con nbsp o espacios extra. */
-  const normalizeErp = (s: string) =>
-    s.normalize("NFC").replace(/\s+/g, " ").trim();
-  const knownErpNumbers = new Set(
-    localPedidos
-      .map((p) => p.erpOrderNumber)
-      .filter((x): x is string => Boolean(x))
-      .map(normalizeErp),
-  );
-  const onlyErp = erpOrders.filter(
-    (o) => !knownErpNumbers.has(normalizeErp(o.erpOrderId)),
-  );
-
-  const totalRows = localPedidos.length + onlyErp.length;
+  const localPedidos = await listPedidosByClient(clientId, 200);
+  const totalRows = localPedidos.length;
 
   return (
     <div>
@@ -78,7 +61,6 @@ export default async function PedidosPage() {
                 <th className="px-4 py-3 font-semibold">Sucursal</th>
                 <th className="px-4 py-3 font-semibold">Fecha despacho</th>
                 <th className="px-4 py-3 font-semibold">Estado</th>
-                <th className="px-4 py-3 font-semibold">Origen</th>
                 <th className="px-4 py-3 font-semibold text-right">Ítems</th>
                 <th className="px-4 py-3 font-semibold text-right">Total</th>
                 <th className="px-4 py-3"></th>
@@ -107,11 +89,6 @@ export default async function PedidosPage() {
                   <td className="px-4 py-3">
                     <PedidoStatusPill status={p.status} />
                   </td>
-                  <td className="px-4 py-3">
-                    <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-blue-50 text-blue-800 border-blue-200">
-                      Web
-                    </span>
-                  </td>
                   <td className="px-4 py-3 text-right text-gray-700">
                     {p.items.reduce((a, x) => a + x.quantity, 0)}
                   </td>
@@ -126,48 +103,6 @@ export default async function PedidosPage() {
                     >
                       Ver detalle →
                     </Link>
-                  </td>
-                </tr>
-              ))}
-
-              {onlyErp.map((o) => (
-                <tr key={o.erpOrderId} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-mono text-xs text-gray-400">
-                    —
-                  </td>
-                  <td className="px-4 py-3 font-mono text-xs text-[#0a2b3d] font-bold">
-                    {o.erpOrderId}
-                  </td>
-                  <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
-                    {formatDate(o.createdAt)}
-                  </td>
-                  <td className="px-4 py-3 text-gray-700 text-xs">
-                    {o.warehouseDescription || o.sucursal || o.deposito || o.warehouseId || "—"}
-                  </td>
-                  <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
-                    {o.estimatedDispatchDate
-                      ? formatDate(o.estimatedDispatchDate)
-                      : "—"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold border bg-blue-50 text-blue-800 border-blue-200">
-                      {o.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-gray-100 text-gray-700 border-gray-200">
-                      ERP
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right text-gray-700">
-                    {o.itemCount}
-                  </td>
-                  <td className="px-4 py-3 text-right font-semibold text-[#0a2b3d] whitespace-nowrap">
-                    {formatARS(o.total)}{" "}
-                    <span className="text-[10px] text-gray-500">+ IVA</span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <NotaPedidoPdfButton erpOrderId={o.erpOrderId} />
                   </td>
                 </tr>
               ))}
