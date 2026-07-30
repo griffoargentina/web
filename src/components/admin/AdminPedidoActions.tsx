@@ -12,31 +12,42 @@ import type { Pedido } from "@/types/pedido";
  *   en_preparacion → descargar Excel | marcar entregado
  *   entregado      → descargar Excel (histórico)
  *   cancelado      → (nada)
+ *
+ * La edición de sucursal es siempre visible (todos los estados).
  */
-export function AdminPedidoActions({ pedido }: { pedido: Pedido }) {
+export function AdminPedidoActions({
+  pedido,
+}: {
+  pedido: Pedido;
+}) {
   const router = useRouter();
-
-  if (pedido.status === "cancelado") {
-    return null;
-  }
 
   return (
     <section className="space-y-4">
       <h2 className="text-lg font-black text-[#0a2b3d]">Acciones</h2>
 
-      <div className="flex flex-wrap gap-3">
-        <a
-          href={`/api/admin/pedidos/${pedido.id}/excel`}
-          className="inline-flex items-center gap-2 px-4 py-2 border-2 border-primary text-primary hover:bg-primary hover:text-white font-bold rounded-lg transition text-sm"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="7 10 12 15 17 10" />
-            <line x1="12" y1="15" x2="12" y2="3" />
-          </svg>
-          Descargar Excel para cargar en Bejerman
-        </a>
-      </div>
+      {pedido.status !== "cancelado" && (
+        <div className="flex flex-wrap gap-3">
+          <a
+            href={`/api/admin/pedidos/${pedido.id}/excel`}
+            className="inline-flex items-center gap-2 px-4 py-2 border-2 border-primary text-primary hover:bg-primary hover:text-white font-bold rounded-lg transition text-sm"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Descargar Excel para cargar en Bejerman
+          </a>
+        </div>
+      )}
+
+      {/* Edición de sucursal — siempre disponible para corrección manual */}
+      <EditarSucursalForm
+        pedidoId={pedido.id}
+        current={pedido.warehouseDescription ?? ""}
+        onDone={() => router.refresh()}
+      />
 
       {pedido.status === "procesando" && (
         <>
@@ -58,6 +69,95 @@ export function AdminPedidoActions({ pedido }: { pedido: Pedido }) {
         />
       )}
     </section>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Editar sucursal (corrección manual)                                        */
+/* -------------------------------------------------------------------------- */
+
+function EditarSucursalForm({
+  pedidoId,
+  current,
+  onDone,
+}: {
+  pedidoId: string;
+  current: string;
+  onDone: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState(current);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/pedidos/${pedidoId}/patch-warehouse`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ warehouseDescription: value }),
+      });
+      const data = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok || !data.ok) throw new Error(data.error ?? `Error ${res.status}`);
+      setOpen(false);
+      onDone();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error");
+      setSubmitting(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => { setValue(current); setOpen(true); }}
+        className={`inline-flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-semibold transition ${
+          current
+            ? "border-gray-300 text-gray-600 hover:border-gray-500"
+            : "border-amber-400 text-amber-700 bg-amber-50 hover:bg-amber-100"
+        }`}
+      >
+        {current ? "✏️ Editar sucursal" : "⚠️ Agregar sucursal (falta)"}
+      </button>
+    );
+  }
+
+  return (
+    <form
+      onSubmit={submit}
+      className="bg-gray-50 border border-gray-300 rounded-xl p-5 space-y-3"
+    >
+      <h3 className="font-bold text-[#0a2b3d]">Corregir sucursal de entrega</h3>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="Ej: Casa Central, Sucursal Norte…"
+        autoFocus
+        className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:border-primary focus:ring-2 focus:ring-blue-100 outline-none bg-white"
+      />
+      {error && <p className="text-red-600 text-xs">{error}</p>}
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={submitting}
+          className="px-4 py-2 bg-primary hover:bg-primary-dark text-white font-bold rounded-lg text-sm transition disabled:opacity-50"
+        >
+          {submitting ? "Guardando…" : "Guardar"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold hover:bg-gray-100 transition"
+        >
+          Cancelar
+        </button>
+      </div>
+    </form>
   );
 }
 

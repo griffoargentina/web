@@ -71,7 +71,9 @@ export function AdminPedidoRow({ pedido }: { pedido: Pedido }) {
           <p className="text-xs text-gray-500 font-mono">{pedido.clientId}</p>
         </td>
         <td className="px-4 py-3 text-xs text-gray-700">
-          {pedido.warehouseDescription || "—"}
+          {pedido.warehouseDescription || (
+            <span className="text-amber-600 font-semibold">⚠ sin sucursal</span>
+          )}
         </td>
         <td className="px-4 py-3 text-gray-700 whitespace-nowrap text-xs">
           {formatDateTime(pedido.createdAt)}

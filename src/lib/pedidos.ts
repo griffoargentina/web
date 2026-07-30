@@ -283,3 +283,15 @@ export async function cancelPedido(
   await persist(pedido, old);
   return pedido;
 }
+
+/** Actualiza la descripción de sucursal de un pedido (corrección manual desde el admin). */
+export async function patchWarehouse(
+  id: string,
+  warehouseDescription: string,
+): Promise<Pedido> {
+  const pedido = await getPedido(id);
+  if (!pedido) throw new Error(`Pedido ${id} no existe`);
+  pedido.warehouseDescription = warehouseDescription.trim();
+  await persist(pedido);
+  return pedido;
+}
