@@ -1054,13 +1054,16 @@ Grupos:
   ID web, cliente, **sucursal** (naranja "⚠ sin sucursal" si vacía),
   fecha, estado, items, total, mail enviado.
   `AdminPedidoRow` expande acciones inline (cambiar estado, cancelar,
-  copiar nº Bejerman). `PedidosNotifEmailBox` arriba para configurar
-  la dirección de mail que recibe notificaciones de pedidos nuevos.
+  copiar nº Bejerman, **eliminar**). `PedidosNotifEmailBox` arriba para
+  configurar la dirección de mail que recibe notificaciones de pedidos nuevos.
 - `/admin/pedidos/[id]` — Detalle de un pedido con todo el desglose.
   `AdminPedidoActions` incluye `EditarSucursalForm` (siempre visible,
   independiente del estado) para corregir `warehouseDescription` vía
   `POST /api/admin/pedidos/[id]/patch-warehouse` → `patchWarehouse()`
   en `pedidos.ts`. Útil para pedidos donde la sucursal quedó vacía.
+  `EliminarPedidoButton` (con confirmación) disponible en la fila expandida
+  de la lista y en el detalle — llama a `POST /api/admin/pedidos/[id]/delete`
+  → `deletePedido()` en `pedidos.ts` (borra hash + todos los sorted sets).
   **Nota**: pedidos ERP desactivados del portal cliente (ver sección
   Portal B2B → pedidos) — solo se muestran pedidos Redis.
 - `/admin/listas-precios` — Sube/rota las listas de precios (PDF/XLSX)
