@@ -328,12 +328,14 @@ portal:
   inline para que el distribuidor pueda agregar al pedido sin salir.
   Component: `components/cuenta/LanzamientosCarousel.tsx`. Sin saludo
   "Hola, X" — fuera a pedido de la cliente.
-- `/cuenta/(portal)/pedidos/page.tsx` — tabla con ERP ID, ref web,
-  fecha, sucursal, estado, ítems, total. Estados pintados por `PedidoStatusPill`.
-  Los pedidos ERP con status "cancelado/cancelled/anulado" se filtran
-  antes de mostrar — no aparecen en el portal. El campo sucursal se
-  lee de `warehouseDescription | sucursal | deposito | warehouseId`
-  (el que mande el ERP).
+- `/cuenta/(portal)/pedidos/page.tsx` — tabla con ref web, NP Bejerman,
+  fecha, sucursal, fecha despacho, estado, ítems, total. Estados pintados
+  por `PedidoStatusPill`. Solo muestra pedidos Redis (web).
+  **⚠️ Integración ERP desactivada** (`getPendingOrdersForClient` comentada):
+  el endpoint `/ERP/clientes/<code>/pedidos` devolvía pedidos de TODOS
+  los clientes sin filtrar — clientes veían pedidos ajenos y registros
+  históricos de años anteriores. Reactivar cuando el técnico del ERP
+  corrija el filtro server-side. Ver `bejerman.ts::getPendingOrdersForClient`.
 - `/cuenta/(portal)/pedidos/[id]/page.tsx` — detalle del pedido con
   items, totales, `CancelarPedidoButton` si está en estado cancelable.
 - `/cuenta/(portal)/armar-pedido/page.tsx` — 3 tabs: **Grilla por
