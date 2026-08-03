@@ -186,10 +186,12 @@ async function buildXlsx(products: CatalogProduct[]): Promise<Buffer> {
   const productSheet = wb.addWorksheet("Productos");
   productSheet.columns = [
     { header: "Código", key: "code", width: 14 },
+    { header: "Código seguro", key: "safeCode", width: 16 },
     { header: "Línea", key: "category", width: 14 },
     { header: "Producto", key: "product", width: 28 },
     { header: "Kit", key: "isKit", width: 6 },
     { header: "Descripción", key: "description", width: 40 },
+    { header: "Observaciones", key: "observation", width: 40 },
     { header: "Ubicación", key: "ubicacion", width: 22 },
     { header: "Lado", key: "lado", width: 22 },
     { header: "Vehículos", key: "vehicleCount", width: 12 },
@@ -203,10 +205,12 @@ async function buildXlsx(products: CatalogProduct[]): Promise<Buffer> {
     const { ubicaciones, lados } = getDisplayApplication(p);
     productSheet.addRow({
       code: p.code,
+      safeCode: p.safe_code,
       category: p.category,
       product: p.product,
       isKit: p.is_kit ? "Sí" : "No",
       description: p.description,
+      observation: p.observation ?? "",
       ubicacion: ubicaciones.join(", "),
       lado: lados.join(", "),
       vehicleCount: p.vehicles?.length ?? 0,
@@ -219,7 +223,7 @@ async function buildXlsx(products: CatalogProduct[]): Promise<Buffer> {
   }
   styleHeader(productSheet);
   productSheet.views = [{ state: "frozen", ySplit: 1 }];
-  productSheet.autoFilter = { from: "A1", to: "M1" };
+  productSheet.autoFilter = { from: "A1", to: "O1" };
 
   /* --- Sheet 2: Vehículos --- */
   const vehicleSheet = wb.addWorksheet("Vehículos");
@@ -231,6 +235,8 @@ async function buildXlsx(products: CatalogProduct[]): Promise<Buffer> {
     { header: "Versión", key: "version", width: 18 },
     { header: "Año desde", key: "from", width: 12 },
     { header: "Año hasta", key: "until", width: 12 },
+    { header: "Nombre comercial", key: "marketName", width: 24 },
+    { header: "Cód. Promotive", key: "promoCode", width: 16 },
   ];
   for (const p of products) {
     for (const v of p.vehicles ?? []) {
@@ -242,12 +248,14 @@ async function buildXlsx(products: CatalogProduct[]): Promise<Buffer> {
         version: v.version,
         from: v.sold_from_year,
         until: v.sold_until_year,
+        marketName: v.market_name ?? "",
+        promoCode: v.code ?? "",
       });
     }
   }
   styleHeader(vehicleSheet);
   vehicleSheet.views = [{ state: "frozen", ySplit: 1 }];
-  vehicleSheet.autoFilter = { from: "A1", to: "G1" };
+  vehicleSheet.autoFilter = { from: "A1", to: "I1" };
 
   /* --- Sheet 3: Atributos --- */
   const attrSheet = wb.addWorksheet("Atributos");
@@ -365,7 +373,7 @@ function getProductBaseColIndex(p: CatalogProduct): number | null {
 function addBaseSheet(wb: ExcelJS.Workbook, products: CatalogProduct[]): void {
   const ws = wb.addWorksheet("Base");
 
-  const PROD_START = 11; // Column K (1-based) — G es Cód. Promotive, H-J separadores
+  const PROD_START = 12; // Column L (1-based) — H es Market Name, I-K separadores
   const N_PROD = 14;
   const N_HEADER = 6;
 
@@ -399,10 +407,11 @@ function addBaseSheet(wb: ExcelJS.Workbook, products: CatalogProduct[]): void {
     { sistema: "Transmisión", pieza: "Kit fuelle semieje", posicion: "RUEDA", lado: "IZQ", color: C_TRA },
   ];
 
-  // Column widths: A-F vehicle data, G Cód. Promotive, H-J narrow separator, K-X product cols
+  // Column widths: A-F vehicle data, G Cód. Promotive, H Market Name, I-K separadores, L+ productos
   [16, 20, 24, 18, 10, 10].forEach((w, i) => { ws.getColumn(i + 1).width = w; });
-  ws.getColumn(7).width = 16; // G: Cód. Promotive
-  for (let i = 8; i <= 10; i++) ws.getColumn(i).width = 2;
+  ws.getColumn(7).width = 16;  // G: Cód. Promotive
+  ws.getColumn(8).width = 22;  // H: Market Name
+  for (let i = 9; i <= 11; i++) ws.getColumn(i).width = 2;
   for (let i = 0; i < N_PROD; i++) ws.getColumn(PROD_START + i).width = 13;
 
   function hdrCell(cell: ExcelJS.Cell, color: string, value: string | number): void {
@@ -484,7 +493,7 @@ function addBaseSheet(wb: ExcelJS.Workbook, products: CatalogProduct[]): void {
   {
     const row = ws.getRow(6);
     row.height = 24;
-    const vehLabels = ["Marca", "Modelo base", "Modelo", "Versión", "Año desde", "Año hasta", "Cód. Promotive"];
+    const vehLabels = ["Marca", "Modelo base", "Modelo", "Versión", "Año desde", "Año hasta", "Cód. Promotive", "Nombre comercial"];
     for (let i = 0; i < vehLabels.length; i++) {
       const cell = row.getCell(i + 1);
       cell.value = vehLabels[i];
@@ -542,6 +551,7 @@ function addBaseSheet(wb: ExcelJS.Workbook, products: CatalogProduct[]): void {
     row.getCell(5).value = v.sold_from_year;
     row.getCell(6).value = v.sold_until_year;
     row.getCell(7).value = v.code ?? "";
+    row.getCell(8).value = v.market_name ?? "";
     for (let c = 1; c <= N_PROD; c++) {
       const code = codes.get(c);
       if (code) {
@@ -556,5 +566,5 @@ function addBaseSheet(wb: ExcelJS.Workbook, products: CatalogProduct[]): void {
   }
 
   // Freeze: columns A-I (9 cols) and rows 1-6 (6 header rows)
-  ws.views = [{ state: "frozen", xSplit: 10, ySplit: 6, topLeftCell: "K7", activeCell: "K7" }];
+  ws.views = [{ state: "frozen", xSplit: 11, ySplit: 6, topLeftCell: "L7", activeCell: "L7" }];
 }
