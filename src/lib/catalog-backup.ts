@@ -303,8 +303,9 @@ function styleHeader(sheet: ExcelJS.Worksheet): void {
 /* -------------------------------------------------------------------------- */
 
 /**
- * Mapea un producto a una de las 14 columnas de la hoja "Base".
- * Retorna null si el producto no cae en ninguna columna (máquinas, etc.).
+ * Devuelve TODOS los índices de columna de la hoja "Base" donde aplica un
+ * producto. Un producto puede caer en más de una columna (ej. un fuelle de
+ * dirección que aplica a IZQ y DER a la vez).
  *
  *  1  Fuelle cremallera    Dirección  DER
  *  2  Fuelle cremallera    Dirección  IZQ
@@ -320,8 +321,11 @@ function styleHeader(sheet: ExcelJS.Worksheet): void {
  * 12  Kit fuelle semieje   Transm.    DER / RUEDA
  * 13  Kit fuelle semieje   Transm.    IZQ / CAJA
  * 14  Kit fuelle semieje   Transm.    IZQ / RUEDA
+ *
+ * Usa `includes` en lugar de `startsWith` para capturar valores compuestos
+ * como "Izquierdo y/o Derecho (según vehículo)" que deben ir a ambas columnas.
  */
-function getProductBaseColIndex(p: CatalogProduct): number | null {
+function getProductBaseColIndices(p: CatalogProduct): number[] {
   const cat = (p.category || "").toLowerCase();
   const name = p.product.toUpperCase();
   const isKit = p.is_kit === 1 || name.includes("KIT");
@@ -334,40 +338,47 @@ function getProductBaseColIndex(p: CatalogProduct): number | null {
   const ubs = ubicaciones.map((s) => s.toUpperCase());
   const lds = lados.map((s) => s.toUpperCase());
 
+  const cols: number[] = [];
+
   if (cat.includes("direc")) {
-    if (ubs.some((s) => s.startsWith("DERECH"))) return 1;
-    if (ubs.some((s) => s.startsWith("IZQUIER"))) return 2;
-    return null;
+    // includes() en lugar de startsWith() para capturar "IZQUIERDO Y/O DERECHO"
+    if (ubs.some((s) => s.includes("DERECH"))) cols.push(1);
+    if (ubs.some((s) => s.includes("IZQUIER"))) cols.push(2);
+    return cols;
   }
 
   if (cat.includes("susp")) {
-    const isDel = ubs.some((s) => s.startsWith("DELANT"));
-    const isTra = ubs.some((s) => s.startsWith("TRASER"));
     const isTope = name.includes("TOPE") && !name.includes("FUELLE");
-    if (isKit) return isDel ? 3 : isTra ? 4 : null;
-    if (isTope) return isDel ? 5 : isTra ? 6 : null;
-    return null;
+    if (isKit) {
+      if (ubs.some((s) => s.startsWith("DELANT"))) cols.push(3);
+      if (ubs.some((s) => s.startsWith("TRASER"))) cols.push(4);
+    } else if (isTope) {
+      if (ubs.some((s) => s.startsWith("DELANT"))) cols.push(5);
+      if (ubs.some((s) => s.startsWith("TRASER"))) cols.push(6);
+    }
+    return cols;
   }
 
   if (cat.includes("trans")) {
-    const isCaja = ubs.some((s) => s.includes("CAJA"));
+    const isCaja  = ubs.some((s) => s.includes("CAJA"));
     const isRueda = ubs.some((s) => s.includes("RUEDA"));
-    const isDer = lds.some((s) => s.startsWith("DERECH"));
-    const isIzq = lds.some((s) => s.startsWith("IZQUIER"));
+    const isDer   = lds.some((s) => s.includes("DERECH"));
+    const isIzq   = lds.some((s) => s.includes("IZQUIER"));
     if (!isKit) {
-      if (isDer && isCaja) return 7;
-      if (isDer && isRueda) return 8;
-      if (isIzq && isCaja) return 9;
-      if (isIzq && isRueda) return 10;
+      if (isDer && isCaja)  cols.push(7);
+      if (isDer && isRueda) cols.push(8);
+      if (isIzq && isCaja)  cols.push(9);
+      if (isIzq && isRueda) cols.push(10);
     } else {
-      if (isDer && isCaja) return 11;
-      if (isDer && isRueda) return 12;
-      if (isIzq && isCaja) return 13;
-      if (isIzq && isRueda) return 14;
+      if (isDer && isCaja)  cols.push(11);
+      if (isDer && isRueda) cols.push(12);
+      if (isIzq && isCaja)  cols.push(13);
+      if (isIzq && isRueda) cols.push(14);
     }
+    return cols;
   }
 
-  return null;
+  return cols;
 }
 
 function addBaseSheet(wb: ExcelJS.Workbook, products: CatalogProduct[]): void {
@@ -514,8 +525,8 @@ function addBaseSheet(wb: ExcelJS.Workbook, products: CatalogProduct[]): void {
   const vehicleMap = new Map<string, VehicleEntry>();
 
   for (const p of products) {
-    const colIdx = getProductBaseColIndex(p);
-    if (colIdx === null) continue;
+    const colIndices = getProductBaseColIndices(p);
+    if (colIndices.length === 0) continue;
     for (const v of p.vehicles ?? []) {
       const key = [
         v.brand, v.master_model, v.model, v.version,
@@ -523,8 +534,10 @@ function addBaseSheet(wb: ExcelJS.Workbook, products: CatalogProduct[]): void {
       ].join("||");
       if (!vehicleMap.has(key)) vehicleMap.set(key, { v, codes: new Map() });
       const entry = vehicleMap.get(key)!;
-      const prev = entry.codes.get(colIdx);
-      entry.codes.set(colIdx, prev ? `${prev}; ${p.code}` : p.code);
+      for (const colIdx of colIndices) {
+        const prev = entry.codes.get(colIdx);
+        entry.codes.set(colIdx, prev ? `${prev}; ${p.code}` : p.code);
+      }
     }
   }
 
