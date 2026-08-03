@@ -1017,11 +1017,13 @@ Grupos:
   desde, Año hasta, **Cód. Promotive** (`v.code`), **Nombre comercial**
   (`v.market_name` — puede venir vacío). Separadores I-K, productos L+
   (PROD_START=12). Cada celda con código tiene fondo verde claro + negrita;
-  celdas vacías sin relleno. Clasificación en `getProductBaseColIndex()`
-  usando `getDisplayApplication()`. Si un vehículo tiene **múltiples
-  productos** en la misma celda, se muestran todos separados con `;` (ej.
-  `063-32; 135-32C`) — no hay first-wins, para que el Excel coincida con
-  la web.
+  celdas vacías sin relleno. Clasificación en `getProductBaseColIndices()`
+  (devuelve `number[]`) usando `getDisplayApplication()`. Un producto puede
+  caer en **múltiples columnas** (ej. fuelle DER+IZQ → cols 1 y 2). Usa
+  `includes()` en lugar de `startsWith()` para detectar valores compuestos
+  como "Izquierdo y/o Derecho (según vehículo)". Si un vehículo tiene
+  **múltiples productos** en la misma celda, se muestran todos separados
+  con `;` (ej. `063-32; 135-32C`).
   Hoja **Vehículos**: incluye también **Nombre comercial** (`market_name`)
   y **Cód. Promotive** (`code`).
   Hoja **Productos**: incluye **Código seguro** (`safe_code`) y
