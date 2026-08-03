@@ -1016,9 +1016,11 @@ Grupos:
   Columnas de vehículo A-I: Marca, Modelo base, Modelo, Versión, Año
   desde, Año hasta, **Cód. Promotive** (`v.code`), **Nombre comercial**
   (`v.market_name`), **Flota circulante** (lookup desde
-  `src/data/flota-circulante.json`, clave `"MARCA||MODELO_PRINCIPAL"` en
-  uppercase → número entero de unidades; la cliente actualiza el JSON
-  pegando datos en el chat). Separadores J-L, productos M+
+  `src/data/flota-circulante.json`, clave 6 campos uppercase:
+  `"MARCA||MODELO PRINCIPAL||GAMA||VERSIÓN||AÑO DESDE||AÑO HASTA"` →
+  número entero de unidades. 5232 entradas cargadas desde
+  GRIFFOFORMATO_PROMOTIVE ago-2025; para actualizar, la cliente pasa el
+  nuevo archivo y se reimporta con Python). Separadores J-L, productos M+
   (PROD_START=13). Cada celda con código tiene fondo verde claro + negrita;
   celdas vacías sin relleno. Clasificación en `getProductBaseColIndices()`
   (devuelve `number[]`) usando `getDisplayApplication()`. Un producto puede
