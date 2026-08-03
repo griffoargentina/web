@@ -1010,13 +1010,16 @@ Grupos:
   cacheada. Los blobs del mismo día se borran explícitamente (`del()`)
   antes de subir los nuevos para no acumular archivos.
   La hoja **Base** es una matriz vehículo × tipo de producto (14 columnas
-  fijas, freeze en L7, 6 filas de encabezado con colores por sistema):
+  fijas, freeze en M7, 6 filas de encabezado con colores por sistema):
   Dirección (fuelle cremallera DER/IZQ), Suspensión (kit+tope y tope
   DEL/TRA) y Transmisión (fuelle/kit semieje × DER/IZQ × CAJA/RUEDA).
-  Columnas de vehículo A-H: Marca, Modelo base, Modelo, Versión, Año
+  Columnas de vehículo A-I: Marca, Modelo base, Modelo, Versión, Año
   desde, Año hasta, **Cód. Promotive** (`v.code`), **Nombre comercial**
-  (`v.market_name` — puede venir vacío). Separadores I-K, productos L+
-  (PROD_START=12). Cada celda con código tiene fondo verde claro + negrita;
+  (`v.market_name`), **Flota circulante** (lookup desde
+  `src/data/flota-circulante.json`, clave `"MARCA||MODELO_PRINCIPAL"` en
+  uppercase → número entero de unidades; la cliente actualiza el JSON
+  pegando datos en el chat). Separadores J-L, productos M+
+  (PROD_START=13). Cada celda con código tiene fondo verde claro + negrita;
   celdas vacías sin relleno. Clasificación en `getProductBaseColIndices()`
   (devuelve `number[]`) usando `getDisplayApplication()`. Un producto puede
   caer en **múltiples columnas** (ej. fuelle DER+IZQ → cols 1 y 2). Usa
@@ -1024,8 +1027,8 @@ Grupos:
   como "Izquierdo y/o Derecho (según vehículo)". Si un vehículo tiene
   **múltiples productos** en la misma celda, se muestran todos separados
   con `;` (ej. `063-32; 135-32C`).
-  Hoja **Vehículos**: incluye también **Nombre comercial** (`market_name`)
-  y **Cód. Promotive** (`code`).
+  Hoja **Vehículos**: incluye **Nombre comercial** (`market_name`) y
+  **Cód. Promotive** (`code`) además de los campos base.
   Hoja **Productos**: incluye **Código seguro** (`safe_code`) y
   **Observaciones** (`observation` — SpecParts lo carga desde jul-2026).
   Sección **"Probar crons"** abajo del historial: dispara los 3 cron
