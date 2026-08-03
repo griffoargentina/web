@@ -1010,18 +1010,22 @@ Grupos:
   cacheada. Los blobs del mismo día se borran explícitamente (`del()`)
   antes de subir los nuevos para no acumular archivos.
   La hoja **Base** es una matriz vehículo × tipo de producto (14 columnas
-  fijas, freeze en K7, 6 filas de encabezado con colores por sistema):
+  fijas, freeze en L7, 6 filas de encabezado con colores por sistema):
   Dirección (fuelle cremallera DER/IZQ), Suspensión (kit+tope y tope
   DEL/TRA) y Transmisión (fuelle/kit semieje × DER/IZQ × CAJA/RUEDA).
-  Columnas de vehículo A-G: Marca, Modelo base, Modelo, Versión, Año
-  desde, Año hasta, **Cód. Promotive** (`v.code` de SpecParts — puede
-  venir vacío si SpecParts no lo carga). Separadores H-J, productos K+.
-  Cada celda con código tiene fondo verde claro + negrita; celdas vacías
-  sin relleno. Clasificación en `getProductBaseColIndex()` usando
-  `getDisplayApplication()`. Si un vehículo tiene **múltiples productos**
-  en la misma celda, se muestran todos separados por espacio (ej.
+  Columnas de vehículo A-H: Marca, Modelo base, Modelo, Versión, Año
+  desde, Año hasta, **Cód. Promotive** (`v.code`), **Nombre comercial**
+  (`v.market_name` — puede venir vacío). Separadores I-K, productos L+
+  (PROD_START=12). Cada celda con código tiene fondo verde claro + negrita;
+  celdas vacías sin relleno. Clasificación en `getProductBaseColIndex()`
+  usando `getDisplayApplication()`. Si un vehículo tiene **múltiples
+  productos** en la misma celda, se muestran todos separados con `;` (ej.
   `063-32; 135-32C`) — no hay first-wins, para que el Excel coincida con
   la web.
+  Hoja **Vehículos**: incluye también **Nombre comercial** (`market_name`)
+  y **Cód. Promotive** (`code`).
+  Hoja **Productos**: incluye **Código seguro** (`safe_code`) y
+  **Observaciones** (`observation` — SpecParts lo carga desde jul-2026).
   Sección **"Probar crons"** abajo del historial: dispara los 3 cron
   jobs server-to-server con el CRON_SECRET real
   (`/api/admin/cron-test`) y muestra status code + body de cada uno.
