@@ -44,11 +44,16 @@ import { getDisplayApplication } from "@/lib/catalog/display";
 import { getRedis } from "@/lib/kv";
 import type { CatalogProduct, SpecPartsVehicle } from "@/types/specparts";
 
-/** Lookup flota circulante: clave "MARCA||MODELO_PRINCIPAL" en uppercase → unidades */
+/** Lookup flota circulante.
+ *  Clave: "MARCA||MODELO PRINCIPAL||GAMA||VERSIÓN||AÑO DESDE||AÑO HASTA" (uppercase).
+ *  Fuente: GRIFFOFORMATO_PROMOTIVE — actualizar src/data/flota-circulante.json. */
 const FLOTA: Record<string, number> = flotaData as Record<string, number>;
 
-function getFlota(brand: string, masterModel: string): number | "" {
-  const key = `${brand.toUpperCase()}||${masterModel.toUpperCase()}`;
+function getFlota(v: SpecPartsVehicle): number | "" {
+  const key = [
+    v.brand, v.master_model, v.model, v.version,
+    v.sold_from_year, v.sold_until_year,
+  ].map((s) => String(s ?? "").trim().toUpperCase()).join("||");
   const val = FLOTA[key];
   return typeof val === "number" ? val : "";
 }
@@ -576,7 +581,7 @@ function addBaseSheet(wb: ExcelJS.Workbook, products: CatalogProduct[]): void {
     row.getCell(6).value = v.sold_until_year;
     row.getCell(7).value = v.code ?? "";
     row.getCell(8).value = v.market_name ?? "";
-    row.getCell(9).value = getFlota(v.brand, v.master_model);
+    row.getCell(9).value = getFlota(v);
     for (let c = 1; c <= N_PROD; c++) {
       const code = codes.get(c);
       if (code) {
