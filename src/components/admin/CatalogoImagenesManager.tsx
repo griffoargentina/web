@@ -57,8 +57,14 @@ function SlotCard({
         clientPayload: slot.id,
         onUploadProgress: ({ percentage }) => setUploadProgress(Math.round(percentage)),
       });
-      // El server guarda la URL en Redis vía onUploadCompleted. Acá solo
-      // actualizamos el UI con la URL devuelta.
+      // Fallback idempotente: el webhook onUploadCompleted no siempre
+      // llega en deploys con protección activa. Llamamos /save directamente
+      // para garantizar que la URL quede en Redis.
+      await fetch("/api/admin/catalogo-imagenes/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: slot.id, url: blob.url }),
+      });
       setCurrentUrl(blob.url);
       setHasOverride(true);
     } catch (err) {
