@@ -1000,9 +1000,10 @@ Grupos:
   (presencia de "@") para mostrar leads viejos creados con el campo
   único `contacto` en las columnas Email/Celular correctas.
 - `/admin/cobertura` — Matriz vehículo × tipo de producto (18 columnas
-  agrupadas en Dirección/Suspensión/Transmisión). Detecta huecos del
-  catálogo. Filter + sort + sticky headers. Export CSV **respeta el
-  filtro activo** (ver `src/components/admin/CoverageTable.tsx`).
+  agrupadas en Dirección/Suspensión/Transmisión). **Removida del sidebar
+  admin** — la hoja "Cobertura" del Excel de backup reemplaza esta función
+  con más detalle (año, versión, etc.). La URL sigue accesible directamente.
+  Filter + sort + sticky headers. Export CSV (ver `src/components/admin/CoverageTable.tsx`).
   Lógica en `src/lib/catalog/coverage.ts`.
 - `/admin/catalogo-imagenes` — Administra imágenes fijas del catálogo
   (hoy la única es `medidas-treboles`, usada en tab Medidas). Sube a
@@ -1014,7 +1015,7 @@ Grupos:
   `onUploadCompleted` no alcanza (igual al patrón de `/admin/descargas`).
 - `/admin/catalogo-backup` — **Backup diario del catálogo SpecParts**.
   Cron en `vercel.json` (`0 4 * * *`) genera snapshot diario
-  (JSON + Excel con 4 hojas: Productos, Vehículos, Atributos, **Base**) y lo
+  (JSON + Excel con 5 hojas: Productos, Vehículos, Atributos, **Base**, **Cobertura**) y lo
   sube a Vercel Blob. Metadata en Redis
   (`catalog-backup:snapshots`, array de últimas 30 entradas).
   Admin puede regenerar a mano y descargar cualquier snapshot del
@@ -1050,6 +1051,13 @@ Grupos:
   **Cód. Promotive** (`code`) además de los campos base.
   Hoja **Productos**: incluye **Código seguro** (`safe_code`) y
   **Observaciones** (`observation` — SpecParts lo carga desde jul-2026).
+  Hoja **Cobertura**: variante de 18 columnas (Suspensión separada por
+  DER/IZQ a diferencia de Base). Columnas de vehículo A-H: Marca, Modelo
+  base, Modelo, Versión, Año desde, Año hasta, Nombre comercial, Flota
+  circulante. Separadores I-J, productos K+ (PROD_START=11). Clasificación
+  en `getCoberturaColIndices()` — usa `getAttrValues(p, "lado")` directo
+  para Suspensión porque `getDisplayApplication` elimina IZQ/DER en esa
+  línea. Reemplaza el panel web `/admin/cobertura` (removido del sidebar).
   Sección **"Probar crons"** abajo del historial: dispara los 3 cron
   jobs server-to-server con el CRON_SECRET real
   (`/api/admin/cron-test`) y muestra status code + body de cada uno.
