@@ -58,9 +58,36 @@ export function getDisplayApplication(product: SpecPartsProduct): DisplayApplica
     for (const s of izqDer) {
       if (!ubicaciones.includes(s)) ubicaciones.push(s);
     }
-    // "Tipo" / "Tipo de dirección" → Mecánica / Hidráulica
+    // "Tipo de dirección" → Mecánica / Hidráulica / Eléctrica.
+    // Se filtra con allowlist para no confundir "Tipo de pieza" = "Fuelle"
+    // (atributo de SpecParts que también contiene "tipo" en el nombre).
     const t = getAttrValue(product, "tipo");
-    if (t) tipoDireccion = t;
+    if (t) {
+      const norm = t
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[̀-ͯ]/g, "");
+      if (
+        norm.includes("hidraul") ||
+        norm.includes("mecan") ||
+        norm.includes("electr")
+      ) {
+        tipoDireccion = t;
+      }
+    }
+    // Fallback: extraer el tipo desde la descripción cuando el atributo
+    // "Tipo" no tiene un valor de mecanismo válido.
+    // Descripción puede ser "Dirección: HIDRÁULICA" o "FUELLE CREMALLERA HIDRÁULICA".
+    if (!tipoDireccion && product.description) {
+      const desc = product.description
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[̀-ͯ]/g, "");
+      if (desc.includes("hidraul")) tipoDireccion = "Hidráulica";
+      else if (desc.includes("mecan")) tipoDireccion = "Mecánica";
+      else if (desc.includes("electrohidraul")) tipoDireccion = "Electrohidráulica";
+      else if (desc.includes("electr")) tipoDireccion = "Eléctrica";
+    }
   }
 
   if (isTransmision) {
