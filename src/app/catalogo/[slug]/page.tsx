@@ -89,6 +89,7 @@ export default async function ProductoCatalogoPage({ params }: { params: Params 
   const isKit = productNameL.includes("tope") && productNameL.includes("fuelle");
 
   const isDireccion = (product.category || "").toLowerCase().includes("direc");
+  const isSuspension = (product.category || "").toLowerCase().includes("susp");
 
   // Fallback para attrs que no dicen "boca menor/mayor" explícitamente en el nombre:
   // si ya existe un attr con "boca menor", un "diámetro interior" a secas es la boca mayor.
@@ -98,7 +99,7 @@ export default async function ProductoCatalogoPage({ params }: { params: Params 
 
   const medidas = attributes
     .filter((a) => !isAplicacion(a.name) && !isComponente(a.name))
-    .map((a) => ({ ...a, displayName: getAttrDisplayLabel(a.name, isTope, isDireccion, hasBocaMenorExplicit, isKit) }))
+    .map((a) => ({ ...a, displayName: getAttrDisplayLabel(a.name, isTope, isDireccion, hasBocaMenorExplicit, isKit, isSuspension) }))
     .filter((a) => a.displayName !== null) as (SpecPartsAttribute & { displayName: string })[];
 
   const componenteAttr = attributes.find((a) => isComponente(a.name));
@@ -353,10 +354,15 @@ function getAttrDisplayLabel(
   isDireccion = false,
   hasBocaMenorExplicit = false,
   isKit = false,
+  isSuspension = false,
 ): string | null {
   const n = name.toLowerCase().trim();
 
   if (n.includes("pliegue")) return null;
+
+  // En Suspensión, el atributo "Tipo" (ej. "Espiga - Ojal") no aporta
+  // información útil para el catálogo web — se oculta.
+  if (isSuspension && n === "tipo") return null;
 
   // Para kits (KIT FUELLE Y TOPE), isTope=false aunque haya attrs del tope.
   // Detectamos attrs del tope por el nombre del attr (substring "tope").
