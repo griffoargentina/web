@@ -1311,9 +1311,10 @@ Redis, el endpoint devuelve `ok: true` y el usuario ve verde. El
 admin ve el lead en `/admin/leads` aunque no haya recibido el email.
 
 **Sender**: `Griffo <contacto@griffo.com.ar>` (dominio `griffo.com.ar`
-verificado en Resend desde 2026-05). Todos los forms mandan a
-`["contacto@griffo.com.ar", "jgriffo@griffo.com.ar"]` — un solo mail
-con ambas direcciones en el `to`. Si en algún momento se quieren destinatarios
+verificado en Resend desde 2026-05). Contacto, newsletter, garantía y
+desarrollo a medida mandan a
+`["contacto@griffo.com.ar", "jgriffo@griffo.com.ar", "web@griffo.com.ar"]`
+— un solo mail con las tres direcciones en el `to`. Si en algún momento se quieren destinatarios
 por área (garantía → `garantia@`, ventas → `ventas@`, etc.), basta
 con cambiar el `to:` en cada route handler — el sender ya está
 verificado para `*@griffo.com.ar`.
