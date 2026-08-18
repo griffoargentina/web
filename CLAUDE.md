@@ -124,6 +124,12 @@ Definidas en `globals.css` como `--color-primary-value`, `--color-accent-value`,
 `--color-primary-dark`. Exportadas a Tailwind como `bg-primary`, `text-accent`,
 `bg-primary-dark`, etc.
 
+`globals.css` declara `color-scheme: light` en `:root` — el sitio es
+intencionalmente solo modo claro (paleta Pantone fija, fondo blanco). Sin
+esta declaración, navegadores en dark mode aplicaban fondo negro con texto
+oscuro dejando el contenido invisible. No agregar soporte dark mode sin
+rediseñar toda la paleta.
+
 ## Convenciones de diseño
 
 1. **Sin título de página en el body**. El navbar destaca el item activo con
