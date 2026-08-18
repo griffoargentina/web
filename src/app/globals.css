@@ -7,6 +7,9 @@
  * - Dark:      Pantone 308 C  — #005B82  (azul oscuro, hover/footer)
  */
 :root {
+  /* Sitio corporativo con paleta Pantone fija — solo modo claro. */
+  color-scheme: light;
+
   --background: #ffffff;
   --foreground: #1a1a1a;
 
