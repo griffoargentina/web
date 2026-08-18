@@ -773,6 +773,7 @@ Layout por prioridad de info (de más a menos relevante):
    - LARGO / LARGO FUELLE / LONG. FUELLE → LARGO FUELLE
    - LARGO DE TOPE / LARGO TOPE / LONG. TOPE / ALTURA LIBRE / ALTURA → LARGO TOPE
    - PLIEGUES → oculto siempre
+   - TIPO (nombre exacto) en Suspensión → oculto siempre (ej. "Espiga - Ojal" no aporta info útil)
    - Fallback para attrs sin "boca" en el nombre ("Diámetro Interior" a secas):
      si es attr de tope → DIÁMETRO INTERNO TOPE;
      si ya existe otro attr con "boca menor" → BOCA MAYOR; si no → BOCA MENOR.
