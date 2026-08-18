@@ -853,6 +853,11 @@ URLs indexables en Google (cada producto tiene una sola URL canónica).
 - `src/components/catalog/ProductCard.tsx` — card con resumen + modal.
 - `src/components/catalog/VehiclesModal.tsx` — modal de vehículos detallados.
 - `src/components/catalog/ProductGallery.tsx` — galería del detalle.
+- `src/components/catalog/ImageLightbox.tsx` — lightbox full-screen. Usa `<img>` nativo
+  (NO `next/image`) para que funcione con cualquier URL externa sin necesitar
+  `remotePatterns`. Esto es intencional: las imágenes de Vercel Blob y SpecParts
+  ya vienen optimizadas en origen. No revertir a `next/image` sin agregar primero
+  todos los dominios a `remotePatterns` en `next.config.ts`.
 - `src/app/catalogo/page.tsx` — página del catálogo.
 - `src/app/catalogo/[slug]/page.tsx` — detalle de producto (SSG + redirect).
 - `src/app/api/catalog/products/route.ts` — route handler JSON.
