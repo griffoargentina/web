@@ -733,9 +733,15 @@ detalle del producto. Devuelve `{ ubicaciones, lados, tipoDireccion? }`.
 - **Suspensión**: oculta "Lado IZQUIERDO/DERECHO" (no aporta — son
   simétricos). DELANTERO/TRASERO sí quedan.
 - **Dirección**: promueve "Lado IZQUIERDO/DERECHO" a "Ubicación"
-  (es el dato principal). Además extrae el atributo `"tipo"` (match
-  substring) y lo expone como `tipoDireccion` → la `ProductCard` lo
-  muestra como "Tipo: Mecánica / Hidráulica".
+  (es el dato principal). Además extrae `tipoDireccion` con dos capas:
+  1. `getAttrValue(product, "tipo")` — solo se acepta si el valor contiene
+     "hidraul", "mecan" o "electr" (allowlist). SpecParts a veces carga
+     "Tipo de pieza" = "Fuelle" en productos de Dirección, lo que antes
+     causaba que se mostrara "Tipo: Fuelle" en vez de "Tipo: Hidráulica".
+  2. Fallback desde `product.description`: si el atributo no pasa el
+     allowlist, se parsea la descripción (ej. "Dirección: HIDRÁULICA")
+     para extraer el tipo. La `ProductCard` lo muestra como
+     "Tipo: Mecánica / Hidráulica / Eléctrica / Electrohidráulica".
 - **Transmisión**: en "Ubicación" sólo deja LADO CAJA / LADO RUEDA.
 
 **Nota sobre atributos de SpecParts**:
