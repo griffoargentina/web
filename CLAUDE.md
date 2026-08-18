@@ -1001,7 +1001,11 @@ Grupos:
 - `/admin/catalogo-imagenes` — Administra imágenes fijas del catálogo
   (hoy la única es `medidas-treboles`, usada en tab Medidas). Sube a
   Blob, guarda URL en Redis (`catalogo-imagenes:<key>`). Componente
-  `components/admin/CatalogoImagenesManager.tsx`.
+  `components/admin/CatalogoImagenesManager.tsx`. Upload directo
+  cliente → Blob vía `/api/admin/catalogo-imagenes/upload` (handleUpload).
+  Fallback idempotente: el cliente también hace POST a
+  `/api/admin/catalogo-imagenes/save` tras el upload por si el webhook
+  `onUploadCompleted` no alcanza (igual al patrón de `/admin/descargas`).
 - `/admin/catalogo-backup` — **Backup diario del catálogo SpecParts**.
   Cron en `vercel.json` (`0 4 * * *`) genera snapshot diario
   (JSON + Excel con 4 hojas: Productos, Vehículos, Atributos, **Base**) y lo
