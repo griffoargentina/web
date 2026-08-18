@@ -47,7 +47,6 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/admin/productos", label: "Productos destacados", icon: "box" },
       { href: "/admin/links-mercadolibre", label: "Links Mercado Libre", icon: "download" },
-      { href: "/admin/cobertura", label: "Cobertura", icon: "grid" },
       { href: "/admin/catalogo-imagenes", label: "Imagen tréboles", icon: "image" },
       { href: "/admin/banco-imagenes", label: "Banco de imágenes", icon: "download" },
       { href: "/admin/catalogo-backup", label: "Backup del catálogo", icon: "download" },

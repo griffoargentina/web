@@ -41,6 +41,7 @@ import ExcelJS from "exceljs";
 import flotaData from "@/data/flota-circulante.json";
 import { listCatalog } from "@/lib/api/specparts";
 import { getDisplayApplication } from "@/lib/catalog/display";
+import { getAttrValues } from "@/lib/catalog/utils";
 import { getRedis } from "@/lib/kv";
 import type { CatalogProduct, SpecPartsVehicle } from "@/types/specparts";
 
@@ -296,6 +297,9 @@ async function buildXlsx(products: CatalogProduct[]): Promise<Buffer> {
 
   /* --- Sheet 4: Base --- */
   addBaseSheet(wb, products);
+
+  /* --- Sheet 5: Cobertura --- */
+  addCoberturaSheet(wb, products);
 
   const arrayBuffer = await wb.xlsx.writeBuffer();
   return Buffer.from(arrayBuffer);
@@ -597,4 +601,292 @@ function addBaseSheet(wb: ExcelJS.Workbook, products: CatalogProduct[]): void {
 
   // Freeze: columns A-I (9 cols) and rows 1-6 (6 header rows)
   ws.views = [{ state: "frozen", xSplit: 12, ySplit: 6, topLeftCell: "M7", activeCell: "M7" }];
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Sheet 5: Cobertura — vehículo × tipo de producto (18 columnas)            */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Variante de 18 columnas que separa IZQ/DER también en Suspensión
+ * (a diferencia de Base que las agrupa). Equivale al panel web /admin/cobertura
+ * pero con detalle completo de vehículo (año, versión, modelo, etc.).
+ *
+ * Columnas de producto (1-18):
+ *  1-2   Dirección   Fuelle cremallera         DER / IZQ
+ *  3-6   Suspensión  Kit fuelle+tope            DEL·DER / DEL·IZQ / TRA·DER / TRA·IZQ
+ *  7-10  Suspensión  Tope amortiguador          DEL·DER / DEL·IZQ / TRA·DER / TRA·IZQ
+ * 11-14  Transmisión Fuelle semieje             DER·CAJA / DER·RUEDA / IZQ·CAJA / IZQ·RUEDA
+ * 15-18  Transmisión Kit fuelle semieje         DER·CAJA / DER·RUEDA / IZQ·CAJA / IZQ·RUEDA
+ */
+function getCoberturaColIndices(p: CatalogProduct): number[] {
+  const cat = (p.category || "").toLowerCase();
+  const name = p.product.toUpperCase();
+  const isKit = p.is_kit === 1 || name.includes("KIT");
+  const { ubicaciones, lados } = getDisplayApplication(p);
+  const ubs = ubicaciones.map((s) => s.toUpperCase());
+  const lds = lados.map((s) => s.toUpperCase());
+  // En Suspensión, getDisplayApplication elimina IZQ/DER de lados — leer
+  // los atributos crudos para recuperar esa info.
+  const rawSides = getAttrValues(p, "lado").map((s) => s.toUpperCase());
+  const cols: number[] = [];
+
+  if (cat.includes("direc")) {
+    // Dirección promueve IZQ/DER a ubicaciones — usar ubs.
+    if (ubs.some((s) => s.includes("DERECH"))) cols.push(1);
+    if (ubs.some((s) => s.includes("IZQUIER"))) cols.push(2);
+    return cols;
+  }
+
+  if (cat.includes("susp")) {
+    const isTope = name.includes("TOPE") && !name.includes("FUELLE");
+    // "Izquierdo y/o Derecho" → ambas columnas.
+    const hasDer = rawSides.some((s) => s.includes("DERECH"));
+    const hasIzq = rawSides.some((s) => s.includes("IZQUIER"));
+    if (isKit) {
+      if (ubs.some((s) => s.includes("DELANT"))) {
+        if (hasDer) cols.push(3);
+        if (hasIzq) cols.push(4);
+      }
+      if (ubs.some((s) => s.includes("TRASER"))) {
+        if (hasDer) cols.push(5);
+        if (hasIzq) cols.push(6);
+      }
+    } else if (isTope) {
+      if (ubs.some((s) => s.includes("DELANT"))) {
+        if (hasDer) cols.push(7);
+        if (hasIzq) cols.push(8);
+      }
+      if (ubs.some((s) => s.includes("TRASER"))) {
+        if (hasDer) cols.push(9);
+        if (hasIzq) cols.push(10);
+      }
+    }
+    return cols;
+  }
+
+  if (cat.includes("trans")) {
+    const isCaja  = ubs.some((s) => s.includes("CAJA"));
+    const isRueda = ubs.some((s) => s.includes("RUEDA"));
+    const isDer   = lds.some((s) => s.includes("DERECH"));
+    const isIzq   = lds.some((s) => s.includes("IZQUIER"));
+    if (!isKit) {
+      if (isDer && isCaja)  cols.push(11);
+      if (isDer && isRueda) cols.push(12);
+      if (isIzq && isCaja)  cols.push(13);
+      if (isIzq && isRueda) cols.push(14);
+    } else {
+      if (isDer && isCaja)  cols.push(15);
+      if (isDer && isRueda) cols.push(16);
+      if (isIzq && isCaja)  cols.push(17);
+      if (isIzq && isRueda) cols.push(18);
+    }
+    return cols;
+  }
+
+  return cols;
+}
+
+function addCoberturaSheet(wb: ExcelJS.Workbook, products: CatalogProduct[]): void {
+  const ws = wb.addWorksheet("Cobertura");
+
+  const N_VEH = 8;    // A-H: vehicle cols
+  const N_SEP = 2;    // I-J: separators
+  const PROD_START = N_VEH + N_SEP + 1; // = 11 (column K, 1-based)
+  const N_PROD = 18;
+  const N_HEADER = 6;
+
+  const C_DIR = "FF00B050";
+  const C_SUS = "FF4472C4";
+  const C_TRA = "FFC65911";
+  const C_VEH = "FF00549F";
+  const C_CODE = "FFE2EFDA";
+
+  type CobCol = { sistema: string; pieza: string; pos: string; lado: string; color: string };
+  const COLS: CobCol[] = [
+    // Dirección
+    { sistema: "Dirección",   pieza: "Fuelle cremallera",  pos: "",      lado: "DER", color: C_DIR },
+    { sistema: "Dirección",   pieza: "Fuelle cremallera",  pos: "",      lado: "IZQ", color: C_DIR },
+    // Suspensión — Kit fuelle+tope
+    { sistema: "Suspensión",  pieza: "Kit fuelle+tope",    pos: "DEL",   lado: "DER", color: C_SUS },
+    { sistema: "Suspensión",  pieza: "Kit fuelle+tope",    pos: "DEL",   lado: "IZQ", color: C_SUS },
+    { sistema: "Suspensión",  pieza: "Kit fuelle+tope",    pos: "TRA",   lado: "DER", color: C_SUS },
+    { sistema: "Suspensión",  pieza: "Kit fuelle+tope",    pos: "TRA",   lado: "IZQ", color: C_SUS },
+    // Suspensión — Tope amortiguador
+    { sistema: "Suspensión",  pieza: "Tope amortiguador",  pos: "DEL",   lado: "DER", color: C_SUS },
+    { sistema: "Suspensión",  pieza: "Tope amortiguador",  pos: "DEL",   lado: "IZQ", color: C_SUS },
+    { sistema: "Suspensión",  pieza: "Tope amortiguador",  pos: "TRA",   lado: "DER", color: C_SUS },
+    { sistema: "Suspensión",  pieza: "Tope amortiguador",  pos: "TRA",   lado: "IZQ", color: C_SUS },
+    // Transmisión — Fuelle semieje
+    { sistema: "Transmisión", pieza: "Fuelle semieje",     pos: "CAJA",  lado: "DER", color: C_TRA },
+    { sistema: "Transmisión", pieza: "Fuelle semieje",     pos: "RUEDA", lado: "DER", color: C_TRA },
+    { sistema: "Transmisión", pieza: "Fuelle semieje",     pos: "CAJA",  lado: "IZQ", color: C_TRA },
+    { sistema: "Transmisión", pieza: "Fuelle semieje",     pos: "RUEDA", lado: "IZQ", color: C_TRA },
+    // Transmisión — Kit fuelle semieje
+    { sistema: "Transmisión", pieza: "Kit fuelle semieje", pos: "CAJA",  lado: "DER", color: C_TRA },
+    { sistema: "Transmisión", pieza: "Kit fuelle semieje", pos: "RUEDA", lado: "DER", color: C_TRA },
+    { sistema: "Transmisión", pieza: "Kit fuelle semieje", pos: "CAJA",  lado: "IZQ", color: C_TRA },
+    { sistema: "Transmisión", pieza: "Kit fuelle semieje", pos: "RUEDA", lado: "IZQ", color: C_TRA },
+  ];
+
+  // Column widths
+  [16, 20, 24, 18, 10, 10, 22, 16].forEach((w, i) => { ws.getColumn(i + 1).width = w; });
+  for (let i = N_VEH + 1; i <= N_VEH + N_SEP; i++) ws.getColumn(i).width = 2;
+  for (let i = 0; i < N_PROD; i++) ws.getColumn(PROD_START + i).width = 13;
+
+  function hdrCell(cell: ExcelJS.Cell, color: string, value: string | number): void {
+    cell.value = value;
+    cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 9 };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: color } };
+    cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+  }
+
+  // Row 1 — Column numbers 1-18
+  {
+    const row = ws.getRow(1);
+    row.height = 18;
+    for (let i = 0; i < N_PROD; i++) hdrCell(row.getCell(PROD_START + i), COLS[i].color, i + 1);
+    row.commit();
+  }
+
+  // Row 2 — Sistema (merged)
+  {
+    const row = ws.getRow(2);
+    row.height = 28;
+    for (const g of [
+      { label: "Dirección",   s: 0,  e: 1,  c: C_DIR },
+      { label: "Suspensión",  s: 2,  e: 9,  c: C_SUS },
+      { label: "Transmisión", s: 10, e: 17, c: C_TRA },
+    ]) {
+      const sc = PROD_START + g.s, ec = PROD_START + g.e;
+      ws.mergeCells(2, sc, 2, ec);
+      hdrCell(row.getCell(sc), g.c, g.label);
+    }
+    row.commit();
+  }
+
+  // Row 3 — Pieza (merged)
+  {
+    const row = ws.getRow(3);
+    row.height = 28;
+    for (const g of [
+      { label: "Fuelle cremallera",  s: 0,  e: 1,  c: C_DIR },
+      { label: "Kit fuelle+tope",    s: 2,  e: 5,  c: C_SUS },
+      { label: "Tope amortiguador",  s: 6,  e: 9,  c: C_SUS },
+      { label: "Fuelle semieje",     s: 10, e: 13, c: C_TRA },
+      { label: "Kit fuelle semieje", s: 14, e: 17, c: C_TRA },
+    ]) {
+      const sc = PROD_START + g.s, ec = PROD_START + g.e;
+      ws.mergeCells(3, sc, 3, ec);
+      hdrCell(row.getCell(sc), g.c, g.label);
+    }
+    row.commit();
+  }
+
+  // Row 4 — GRIFFO (merged per system)
+  {
+    const row = ws.getRow(4);
+    row.height = 22;
+    for (const g of [
+      { s: 0,  e: 1,  c: C_DIR },
+      { s: 2,  e: 9,  c: C_SUS },
+      { s: 10, e: 17, c: C_TRA },
+    ]) {
+      const sc = PROD_START + g.s, ec = PROD_START + g.e;
+      ws.mergeCells(4, sc, 4, ec);
+      hdrCell(row.getCell(sc), g.c, "GRIFFO");
+    }
+    row.commit();
+  }
+
+  // Row 5 — Posición
+  {
+    const row = ws.getRow(5);
+    row.height = 22;
+    for (let i = 0; i < N_PROD; i++) {
+      hdrCell(row.getCell(PROD_START + i), COLS[i].color, COLS[i].pos);
+    }
+    row.commit();
+  }
+
+  // Row 6 — Vehicle labels + Lado
+  {
+    const row = ws.getRow(6);
+    row.height = 24;
+    const vehLabels = ["Marca", "Modelo base", "Modelo", "Versión", "Año desde", "Año hasta", "Nombre comercial", "Flota circulante"];
+    for (let i = 0; i < vehLabels.length; i++) {
+      const cell = row.getCell(i + 1);
+      cell.value = vehLabels[i];
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: C_VEH } };
+      cell.alignment = { vertical: "middle" };
+    }
+    for (let i = 0; i < N_PROD; i++) {
+      hdrCell(row.getCell(PROD_START + i), COLS[i].color, COLS[i].lado);
+    }
+    row.commit();
+  }
+
+  // Build vehicle → codes map
+  type CobEntry = { v: SpecPartsVehicle; codes: Map<number, string> };
+  const vehicleMap = new Map<string, CobEntry>();
+
+  for (const p of products) {
+    const colIndices = getCoberturaColIndices(p);
+    if (colIndices.length === 0) continue;
+    for (const v of p.vehicles ?? []) {
+      const brand = (v.brand || "").toUpperCase().trim();
+      if (!brand || brand === "AGRALE" || brand === "IVECO" || brand === "UNIVERSAL") continue;
+      const key = [
+        v.brand, v.master_model, v.model, v.version,
+        v.sold_from_year, v.sold_until_year, v.code ?? "",
+      ].join("||");
+      if (!vehicleMap.has(key)) vehicleMap.set(key, { v, codes: new Map() });
+      const entry = vehicleMap.get(key)!;
+      for (const colIdx of colIndices) {
+        const prev = entry.codes.get(colIdx);
+        entry.codes.set(colIdx, prev ? `${prev}; ${p.code}` : p.code);
+      }
+    }
+  }
+
+  // Sort: brand → master_model → model → version → year_from
+  const sorted = Array.from(vehicleMap.values()).sort((a, b) => {
+    const x = a.v, y = b.v;
+    return (
+      (x.brand || "").localeCompare(y.brand || "") ||
+      (x.master_model || "").localeCompare(y.master_model || "") ||
+      (x.model || "").localeCompare(y.model || "") ||
+      (x.version || "").localeCompare(y.version || "") ||
+      (x.sold_from_year || 0) - (y.sold_from_year || 0)
+    );
+  });
+
+  // Data rows starting at row 7
+  for (let i = 0; i < sorted.length; i++) {
+    const { v, codes } = sorted[i];
+    const row = ws.getRow(N_HEADER + 1 + i);
+    row.getCell(1).value = v.brand;
+    row.getCell(2).value = v.master_model;
+    row.getCell(3).value = v.model;
+    row.getCell(4).value = v.version;
+    row.getCell(5).value = v.sold_from_year;
+    row.getCell(6).value = v.sold_until_year;
+    row.getCell(7).value = v.market_name ?? "";
+    row.getCell(8).value = getFlota(v);
+    for (let c = 1; c <= N_PROD; c++) {
+      const code = codes.get(c);
+      if (code) {
+        const cell = row.getCell(PROD_START + c - 1);
+        cell.value = code;
+        cell.font = { bold: true, size: 9 };
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: C_CODE } };
+        cell.alignment = { horizontal: "center", vertical: "middle" };
+      }
+    }
+    row.commit();
+  }
+
+  // Freeze: 8 vehicle cols + 2 sep = 10, rows 1-6
+  ws.views = [{ state: "frozen", xSplit: 10, ySplit: 6, topLeftCell: "K7", activeCell: "K7" }];
 }
