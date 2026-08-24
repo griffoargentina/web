@@ -971,7 +971,12 @@ Grupos:
   (breakdown por línea, productos sin foto/vehículos/atributos/descripción,
   discontinuados pero activos, **cobertura de links MercadoLibre**: stat
   "Con link ML" + fila en problemas + card con lista de los primeros 15
-  productos activos sin link — los links se cargan en el admin de SpecParts)
+  productos activos sin link — los links se cargan en el admin de SpecParts,
+  **productos sin ubicación cargada**: card con lista completa de productos
+  de Transmisión/Suspensión/Dirección a los que les falta el atributo de
+  posición en SpecParts (Transmisión → LADO CAJA/RUEDA, Suspensión →
+  DELANTERO/TRASERO, Dirección → IZQ/DER). Lógica en `missingUbicacion()`
+  dentro de `src/lib/admin-catalog-issues.ts`)
   con lista de los primeros 10 productos problemáticos, y log de errores
   (últimos 100 en Redis, botón "Limpiar").
   Helpers en `src/lib/admin-health.ts`, `admin-alerts.ts`,
