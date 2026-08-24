@@ -2,6 +2,37 @@ import { listCatalog } from "@/lib/api/specparts";
 import { getMercadoLibreUrl } from "@/lib/catalog/utils";
 import type { CatalogProduct } from "@/types/specparts";
 
+/** Detecta si un producto enabled tiene el dato de ubicación principal cargado
+ *  según su línea:
+ *  - Transmisión → necesita LADO CAJA o LADO RUEDA
+ *  - Suspensión  → necesita DELANTERO o TRASERO
+ *  - Dirección   → necesita IZQUIERDO o DERECHO
+ *  Devuelve el string de lo que falta, o null si está OK (o línea no aplica).
+ */
+function missingUbicacion(p: CatalogProduct): string | null {
+  const cat = (p.category ?? "").toLowerCase();
+  const isTransmision = cat.includes("transmi");
+  const isSuspension = cat.includes("suspen");
+  const isDireccion = cat.includes("direc");
+  if (!isTransmision && !isSuspension && !isDireccion) return null;
+
+  const allAttrValues = p.attributes
+    .map((a) => (a.value ?? "").toLowerCase())
+    .join(" ");
+
+  if (isTransmision) {
+    if (allAttrValues.includes("caja") || allAttrValues.includes("rueda")) return null;
+    return "sin LADO CAJA/RUEDA";
+  }
+  if (isSuspension) {
+    if (allAttrValues.includes("delan") || allAttrValues.includes("tras")) return null;
+    return "sin DELANTERO/TRASERO";
+  }
+  // isDireccion
+  if (allAttrValues.includes("izquier") || allAttrValues.includes("derech")) return null;
+  return "sin IZQ/DER";
+}
+
 /**
  * Calidad de datos del catálogo de SpecParts. Detecta productos que
  * no tienen los datos necesarios para lucir bien en el sitio público.
@@ -29,6 +60,8 @@ export type CatalogSummary = {
   sinMLList: { code: string; titulo: string }[];
   /** Productos con problemas específicos (para la lista). */
   issues: CatalogIssue[];
+  /** Productos de Transmisión/Suspensión/Dirección sin dato de ubicación cargado. */
+  sinUbicacion: { code: string; titulo: string; linea: string; falta: string }[];
 };
 
 export type CatalogIssue = {
@@ -64,6 +97,7 @@ export async function getCatalogSummary(): Promise<CatalogSummary | null> {
   let sinMercadoLibre = 0;
   const sinMLList: { code: string; titulo: string }[] = [];
   const issues: CatalogIssue[] = [];
+  const sinUbicacion: { code: string; titulo: string; linea: string; falta: string }[] = [];
 
   for (const p of products) {
     const linea = p.category || "Sin línea";
@@ -106,17 +140,26 @@ export async function getCatalogSummary(): Promise<CatalogSummary | null> {
     // Armamos la lista de problemas del producto — solo para productos
     // enabled (los disabled no importan).
     if (p.enabled === 1 && !p.discontinued) {
+      const titulo = p.product || p.description || p.code;
       const problemas: string[] = [];
       if (!hasFoto) problemas.push("sin foto");
       if (!hasVehiculos) problemas.push("sin vehículos");
       if (!hasAttrs) problemas.push("sin atributos");
       if (!hasDesc) problemas.push("sin descripción");
       if (problemas.length > 0) {
-        issues.push({
-          code: p.code,
-          titulo: p.product || p.description || p.code,
-          problemas,
-        });
+        issues.push({ code: p.code, titulo, problemas });
+      }
+
+      // Chequeo de ubicación según línea.
+      const falta = missingUbicacion(p);
+      if (falta) {
+        const cat = (p.category ?? "").toLowerCase();
+        const linea = cat.includes("transmi")
+          ? "Transmisión"
+          : cat.includes("suspen")
+            ? "Suspensión"
+            : "Dirección";
+        sinUbicacion.push({ code: p.code, titulo, linea, falta });
       }
     }
   }
@@ -130,6 +173,9 @@ export async function getCatalogSummary(): Promise<CatalogSummary | null> {
   });
 
   sinMLList.sort((a, b) => a.code.localeCompare(b.code));
+  sinUbicacion.sort((a, b) =>
+    a.linea.localeCompare(b.linea) || a.code.localeCompare(b.code)
+  );
 
   return {
     total: products.length,
@@ -147,5 +193,6 @@ export async function getCatalogSummary(): Promise<CatalogSummary | null> {
     sinMercadoLibre,
     sinMLList,
     issues,
+    sinUbicacion,
   };
 }

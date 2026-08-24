@@ -436,6 +436,43 @@ export default async function AdminDashboard() {
                 </Card>
               </div>
             )}
+
+            {catalog.sinUbicacion.length > 0 && (
+              <div className="mt-4">
+                <Card>
+                  <h3 className="font-bold text-sm text-[#0a2b3d] uppercase tracking-wide mb-3">
+                    Sin ubicación cargada ({catalog.sinUbicacion.length})
+                  </h3>
+                  <p className="text-xs text-gray-500 mb-1">
+                    Productos activos a los que les falta el atributo de posición en SpecParts:
+                  </p>
+                  <p className="text-xs text-gray-400 mb-3">
+                    Transmisión → LADO CAJA / LADO RUEDA · Suspensión → DELANTERO / TRASERO · Dirección → IZQ / DER
+                  </p>
+                  <ul className="divide-y divide-gray-100">
+                    {catalog.sinUbicacion.map((p) => (
+                      <li
+                        key={p.code}
+                        className="py-2 flex items-center gap-3 text-sm"
+                      >
+                        <span className="font-mono font-bold text-primary w-24 shrink-0">
+                          {p.code}
+                        </span>
+                        <span className="flex-1 min-w-0 truncate text-[#0a2b3d]">
+                          {p.titulo}
+                        </span>
+                        <span className="shrink-0 text-xs text-gray-400">
+                          {p.linea} · <span className="text-amber-600">{p.falta}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-xs text-gray-400 mt-3">
+                    Los atributos se cargan en el admin de SpecParts (campo Atributos del producto).
+                  </p>
+                </Card>
+              </div>
+            )}
           </>
         )}
       </section>
