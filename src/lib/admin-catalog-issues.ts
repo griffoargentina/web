@@ -1,12 +1,14 @@
 import { listCatalog } from "@/lib/api/specparts";
 import { getMercadoLibreUrl } from "@/lib/catalog/utils";
+import { productSide } from "@/data/transmision-lado";
 import type { CatalogProduct } from "@/types/specparts";
 
 /** Detecta si un producto enabled tiene el dato de ubicación principal cargado
  *  según su línea:
- *  - Transmisión → necesita LADO CAJA o LADO RUEDA
- *  - Suspensión  → necesita DELANTERO o TRASERO
- *  - Dirección   → necesita IZQUIERDO o DERECHO
+ *  - Transmisión → OK si está en el lookup estático (transmision-lado.ts);
+ *                  si no está, revisa los atributos de SpecParts.
+ *  - Suspensión  → necesita DELANTERO o TRASERO en los atributos.
+ *  - Dirección   → necesita IZQUIERDO o DERECHO en los atributos.
  *  Devuelve el string de lo que falta, o null si está OK (o línea no aplica).
  */
 function missingUbicacion(p: CatalogProduct): string | null {
@@ -16,14 +18,21 @@ function missingUbicacion(p: CatalogProduct): string | null {
   const isDireccion = cat.includes("direc");
   if (!isTransmision && !isSuspension && !isDireccion) return null;
 
+  if (isTransmision) {
+    // El lookup estático (Tabla Aplicaciones de Promotive) es la fuente canónica.
+    if (productSide[p.code]) return null;
+    // Fallback: atributos de SpecParts (por si el código no está en el lookup).
+    const allAttrValues = p.attributes
+      .map((a) => (a.value ?? "").toLowerCase())
+      .join(" ");
+    if (allAttrValues.includes("caja") || allAttrValues.includes("rueda")) return null;
+    return "sin LADO CAJA/RUEDA (agregar al lookup)";
+  }
+
   const allAttrValues = p.attributes
     .map((a) => (a.value ?? "").toLowerCase())
     .join(" ");
 
-  if (isTransmision) {
-    if (allAttrValues.includes("caja") || allAttrValues.includes("rueda")) return null;
-    return "sin LADO CAJA/RUEDA";
-  }
   if (isSuspension) {
     if (allAttrValues.includes("delan") || allAttrValues.includes("tras")) return null;
     return "sin DELANTERO/TRASERO";
