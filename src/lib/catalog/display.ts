@@ -15,6 +15,7 @@
 
 import type { SpecPartsProduct } from "@/types/specparts";
 import { getAttrValue, getAttrValues, getProductLocations } from "./utils";
+import { getTransmisionLado } from "@/data/transmision-lado";
 
 export type DisplayApplication = {
   ubicaciones: string[];
@@ -91,10 +92,25 @@ export function getDisplayApplication(product: SpecPartsProduct): DisplayApplica
   }
 
   if (isTransmision) {
-    ubicaciones = ubicaciones.filter((loc) => {
-      const upper = loc.toUpperCase();
-      return upper.includes("CAJA") || upper.includes("RUEDA");
-    });
+    // Primero intentar el lookup estático (fuente: Tabla Aplicaciones de Promotive).
+    // Es más confiable que los atributos de SpecParts, que suelen estar vacíos.
+    const lookup = getTransmisionLado(product.code);
+    if (lookup) {
+      const label =
+        lookup === "RUEDA"
+          ? "Lado Rueda"
+          : lookup === "CAJA"
+            ? "Lado Caja"
+            : "Caja-Rueda (Según vehículo)";
+      ubicaciones = [label];
+      lados = [];
+    } else {
+      // Fallback: leer del atributo de SpecParts si el código no está en el lookup.
+      ubicaciones = ubicaciones.filter((loc) => {
+        const upper = loc.toUpperCase();
+        return upper.includes("CAJA") || upper.includes("RUEDA");
+      });
+    }
   }
 
   return { ubicaciones, lados, tipoDireccion };

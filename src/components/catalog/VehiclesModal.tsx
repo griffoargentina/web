@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 
 import type { SpecPartsVehicle } from "@/types/specparts";
+import { getTransmisionLado } from "@/data/transmision-lado";
 
 type Props = {
   open: boolean;
@@ -110,7 +111,7 @@ export function VehiclesModal({
                               Nuevo
                             </span>
                           )}
-                          <span>
+                          <span className="flex-1">
                             <span className={isNuevo ? "font-black" : "font-semibold"}>
                               {v.model || v.master_model}
                             </span>
@@ -127,6 +128,7 @@ export function VehiclesModal({
                               </span>
                             ) : null}
                           </span>
+                          <VehicleLadoBadge productCode={productCode} vehicleCode={v.code} />
                         </li>
                       );
                     })}
@@ -138,6 +140,41 @@ export function VehiclesModal({
         </div>
       </div>
     </div>
+  );
+}
+
+/** Badge de Lado Rueda / Lado Caja — solo aparece en productos de Transmisión
+ *  cuando el lookup tiene datos. Para los 14 piezas AMBOS, usa el código del
+ *  vehículo (CODIGO PROMOTIVE) para obtener el lado específico. */
+function VehicleLadoBadge({
+  productCode,
+  vehicleCode,
+}: {
+  productCode: string;
+  vehicleCode?: string;
+}) {
+  const lado = getTransmisionLado(productCode, vehicleCode);
+  if (!lado) return null;
+
+  if (lado === "RUEDA") {
+    return (
+      <span className="shrink-0 inline-flex items-center rounded bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide">
+        Lado Rueda
+      </span>
+    );
+  }
+  if (lado === "CAJA") {
+    return (
+      <span className="shrink-0 inline-flex items-center rounded bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide">
+        Lado Caja
+      </span>
+    );
+  }
+  // AMBOS
+  return (
+    <span className="shrink-0 inline-flex items-center rounded bg-gray-50 text-gray-500 border border-gray-200 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide">
+      Caja y Rueda
+    </span>
   );
 }
 
