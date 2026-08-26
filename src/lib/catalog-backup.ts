@@ -41,6 +41,7 @@ import ExcelJS from "exceljs";
 import flotaData from "@/data/flota-circulante.json";
 import { listCatalog } from "@/lib/api/specparts";
 import { getDisplayApplication } from "@/lib/catalog/display";
+import { getTransmisionIzqDer } from "@/data/transmision-lado";
 import { getAttrValues } from "@/lib/catalog/utils";
 import { getRedis } from "@/lib/kv";
 import type { CatalogProduct, SpecPartsVehicle } from "@/types/specparts";
@@ -381,8 +382,10 @@ function getProductBaseColIndices(p: CatalogProduct): number[] {
   if (cat.includes("trans")) {
     const isCaja  = ubs.some((s) => s.includes("CAJA"));
     const isRueda = ubs.some((s) => s.includes("RUEDA"));
-    const isDer   = lds.some((s) => s.includes("DERECH"));
-    const isIzq   = lds.some((s) => s.includes("IZQUIER"));
+    // IZQ/DER: lookup estático (Tabla Aplicaciones), más confiable que atributos SpecParts.
+    const izqDer = getTransmisionIzqDer(p.code);
+    const isDer = izqDer === "DER" || izqDer === "AMBOS";
+    const isIzq = izqDer === "IZQ" || izqDer === "AMBOS";
     if (!isKit) {
       if (isDer && isCaja)  cols.push(7);
       if (isDer && isRueda) cols.push(8);
@@ -668,8 +671,10 @@ function getCoberturaColIndices(p: CatalogProduct): number[] {
   if (cat.includes("trans")) {
     const isCaja  = ubs.some((s) => s.includes("CAJA"));
     const isRueda = ubs.some((s) => s.includes("RUEDA"));
-    const isDer   = lds.some((s) => s.includes("DERECH"));
-    const isIzq   = lds.some((s) => s.includes("IZQUIER"));
+    // IZQ/DER: lookup estático (Tabla Aplicaciones), más confiable que atributos SpecParts.
+    const izqDer = getTransmisionIzqDer(p.code);
+    const isDer = izqDer === "DER" || izqDer === "AMBOS";
+    const isIzq = izqDer === "IZQ" || izqDer === "AMBOS";
     if (!isKit) {
       if (isDer && isCaja)  cols.push(11);
       if (isDer && isRueda) cols.push(12);

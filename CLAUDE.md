@@ -753,12 +753,13 @@ detalle del producto. Devuelve `{ ubicaciones, lados, tipoDireccion? }`.
   no devuelve este dato en los atributos del producto ni del vehículo — vive en la
   "OBSERVACION APLICACIÓN" de la tabla de aplicaciones interna de Promotive, que
   no está expuesta en el endpoint `/part/list`. El lookup es la fuente canónica:
-  - 87 piezas → "Lado Rueda"
-  - 115 piezas → "Lado Caja"
-  - 14 piezas → "Caja-Rueda (Según vehículo)" (varía por CODIGO PROMOTIVE)
-  Para regenerar: `python3 scripts/gen-transmision-lado.py NuevoExcel.xlsx`.
+  - **CAJA/RUEDA** (`productSide`): 87 piezas Rueda, 115 Caja, 14 AMBOS (varía por vehículo).
+  - **IZQ/DER** (`productIzqDer`): 201 piezas AMBOS, 9 solo IZQ, 6 solo DER.
+    Usado en el Excel de backup (hojas Base y Cobertura) para clasificar por columna.
+  Para regenerar ambos: `python3 scripts/gen-transmision-lado.py NuevoExcel.xlsx`.
   `VehiclesModal` muestra un badge por vehículo (azul=Rueda, ámbar=Caja) usando
-  `vehicle.code` (CODIGO PROMOTIVE) para resolver los 14 casos variables.
+  `vehicle.code` (CODIGO PROMOTIVE) para resolver los 14 casos AMBOS de CAJA/RUEDA.
+  `getTransmisionIzqDer(productCode)` → `IZQ | DER | AMBOS | null`.
 
 **Nota sobre atributos de SpecParts**:
 - `observation` a nivel producto: SpecParts empezó a poblarlo (julio 2026)
