@@ -748,7 +748,17 @@ detalle del producto. Devuelve `{ ubicaciones, lados, tipoDireccion? }`.
      allowlist, se parsea la descripción (ej. "Dirección: HIDRÁULICA")
      para extraer el tipo. La `ProductCard` lo muestra como
      "Tipo: Mecánica / Hidráulica / Eléctrica / Electrohidráulica".
-- **Transmisión**: en "Ubicación" sólo deja LADO CAJA / LADO RUEDA.
+- **Transmisión**: usa lookup estático `src/data/transmision-lado.ts` (generado
+  del Excel `Tabla_Aplicaciones` de Promotive, 216 códigos). La API de SpecParts
+  no devuelve este dato en los atributos del producto ni del vehículo — vive en la
+  "OBSERVACION APLICACIÓN" de la tabla de aplicaciones interna de Promotive, que
+  no está expuesta en el endpoint `/part/list`. El lookup es la fuente canónica:
+  - 87 piezas → "Lado Rueda"
+  - 115 piezas → "Lado Caja"
+  - 14 piezas → "Caja-Rueda (Según vehículo)" (varía por CODIGO PROMOTIVE)
+  Para regenerar: `python3 scripts/gen-transmision-lado.py NuevoExcel.xlsx`.
+  `VehiclesModal` muestra un badge por vehículo (azul=Rueda, ámbar=Caja) usando
+  `vehicle.code` (CODIGO PROMOTIVE) para resolver los 14 casos variables.
 
 **Nota sobre atributos de SpecParts**:
 - `observation` a nivel producto: SpecParts empezó a poblarlo (julio 2026)
