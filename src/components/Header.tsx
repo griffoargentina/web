@@ -84,12 +84,12 @@ export function Header() {
           natural (order-last) porque en el JSX vienen antes del nav
           para que en desktop justify-between los ubique al final. */}
       <div className="flex items-center gap-2 order-last lg:order-none">
-        {/* Cart mobile: solo visible fuera del menú cuando estás en
-            mobile. En desktop la otra instancia dentro del nav se
-            encarga para que quede al lado de "Acceso clientes". */}
-        <span className="lg:hidden">
+        {/* Cart mobile: temporalmente oculto junto con el portal B2B.
+            Para reactivar: descomentar este bloque y el CartIndicator
+            dentro del nav (más abajo). */}
+        {/* <span className="lg:hidden">
           <CartIndicator mobile />
-        </span>
+        </span> */}
 
         {/* Hamburger — mobile only */}
         <button
@@ -273,7 +273,9 @@ export function Header() {
                 </span>
               </Link>
             ) : null}
-            <CartIndicator onClick={() => setOpen(false)} />
+            {/* CartIndicator: temporalmente oculto junto con portal B2B.
+                Para reactivar: descomentar esta línea. */}
+            {/* <CartIndicator onClick={() => setOpen(false)} /> */}
           </li>
         </ul>
       </nav>

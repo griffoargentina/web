@@ -79,14 +79,16 @@ export function CartContent({ impersonatedClient }: Props) {
           >
             Ir al catálogo
           </Link>
-          {!isLoggedIn && (
+          {/* Botón "Acceso clientes": temporalmente oculto (portal B2B pendiente).
+              Para reactivar: descomentar el bloque. */}
+          {/* {!isLoggedIn && (
             <Link
               href="/cuenta/login"
               className="inline-block px-5 py-2 border-2 border-primary text-primary hover:bg-primary hover:text-white font-bold rounded-lg transition"
             >
               Acceso clientes
             </Link>
-          )}
+          )} */}
         </div>
       </div>
     );
@@ -360,14 +362,13 @@ export function CartContent({ impersonatedClient }: Props) {
             >
               {submitting ? "Confirmando…" : "Confirmar pedido"}
             </button>
-          ) : (
-            <Link
-              href="/cuenta/login"
-              className="px-5 py-2 bg-primary hover:bg-primary-dark text-white font-bold rounded-lg transition text-sm"
-            >
-              Ingresar para confirmar
-            </Link>
-          )}
+          ) : null
+          /* Botón "Ingresar para confirmar": temporalmente oculto (portal B2B pendiente).
+             Para reactivar reemplazar null por:
+             <Link href="/cuenta/login" className="px-5 py-2 bg-primary hover:bg-primary-dark text-white font-bold rounded-lg transition text-sm">
+               Ingresar para confirmar
+             </Link>
+          */}
         </div>
       </div>
 
