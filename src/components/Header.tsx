@@ -247,9 +247,10 @@ export function Header() {
               </li>
             );
           })}
-          {/* CTAs de B2B: si está logueado muestra nombre del cliente
-              linkeado al portal; sino, botón 'Acceso clientes'. Carrito
-              siempre al lado. */}
+          {/* CTAs de B2B: botón 'Acceso clientes' temporalmente oculto
+              hasta que el login esté activo (Firebase Auth pendiente).
+              Para reactivarlo: descomentar el bloque completo y
+              eliminar el {null} de abajo. */}
           <li className="lg:ml-3 flex items-center gap-2">
             {ready && isLoggedIn ? (
               <Link
@@ -271,19 +272,7 @@ export function Header() {
                   </span>
                 </span>
               </Link>
-            ) : (
-              <Link
-                href="/cuenta/login"
-                onClick={() => setOpen(false)}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md border-2 border-accent bg-accent lg:bg-transparent lg:hover:bg-accent text-primary hover:text-white font-black text-sm uppercase tracking-wide transition whitespace-nowrap"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-                Acceso clientes
-              </Link>
-            )}
+            ) : null}
             <CartIndicator onClick={() => setOpen(false)} />
           </li>
         </ul>
