@@ -497,11 +497,11 @@ Otros libs server-only:
 
 `components/Header.tsx` usa `useMockSession()`:
 
-- **No logueado**: pill accent amarilla `Acceso clientes` →
-  `/cuenta/login`.
-- **Logueado**: pill verde esmeralda con ícono + `mockCurrentClient.name`
-  arriba de "Entrar al portal" → `/cuenta`. Feedback visual
-  inequívoco.
+- **No logueado**: botón `Acceso clientes` **temporalmente oculto**
+  (Firebase Auth pendiente — clientes reclamaban el acceso en demo).
+  Para reactivar: descomentar el bloque en `Header.tsx` (está marcado).
+- **Logueado**: pill verde esmeralda con ícono + nombre del cliente
+  → `/cuenta`. Sigue visible para quien ya tenga sesión activa.
 
 `CartIndicator` siempre visible, al lado de la hamburguesa en mobile
 y al lado del CTA de cliente en desktop.
