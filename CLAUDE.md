@@ -497,9 +497,11 @@ Otros libs server-only:
 
 `components/Header.tsx` usa `useMockSession()`:
 
-- **No logueado**: botón `Acceso clientes` **temporalmente oculto**
-  (Firebase Auth pendiente — clientes reclamaban el acceso en demo).
-  Para reactivar: descomentar el bloque en `Header.tsx` (está marcado).
+- **No logueado**: botón `Acceso clientes` + `CartIndicator` **temporalmente
+  ocultos** (Firebase Auth pendiente — clientes reclamaban el acceso en demo).
+  Para reactivar: buscar "Para reactivar" en `Header.tsx` (2 bloques:
+  CartIndicator mobile + desktop) y `CartContent.tsx` (2 bloques: botón
+  "Acceso clientes" en carrito vacío + "Ingresar para confirmar" en el pie).
 - **Logueado**: pill verde esmeralda con ícono + nombre del cliente
   → `/cuenta`. Sigue visible para quien ya tenga sesión activa.
 
