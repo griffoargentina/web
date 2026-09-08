@@ -171,6 +171,11 @@ rediseñar toda la paleta.
   directo a `wa.me/<numero>?text=<mensaje>` (antes abría un panel
   intermedio "Consultas / Atención" que sólo agregaba un click extra).
 - `components/ContactForm.tsx` — form de contacto (client).
+- `components/DesarrolloForm.tsx` — form de consulta de desarrollo a medida (client).
+  Acepta prop `compact?: boolean` (default `false`). En modo compacto: inputs más
+  chicos (`py-2 px-3 text-sm`), sin título/subtítulo interno, textarea 3 filas,
+  `space-y-3`. En modo normal: card blanca con sombra, `p-6 lg:p-8 space-y-5`.
+  Se usa `compact` en el sidebar sticky de desktop; sin `compact` en el form mobile.
 - `components/PageHero.tsx` — ya solo exporta `ComingSoon` (el hero original
   fue removido). Se usa en páginas stub.
 - `components/HomeSearch.tsx` — buscador liviano de la home (client). 5 tabs
@@ -207,8 +212,10 @@ rediseñar toda la paleta.
 - `/desarrollo-a-medida`: **completa + formulario de consulta**
   (DesarrolloForm → `/api/desarrollo`). Algunos assets pendientes.
   Layout desktop: 2 columnas — contenido a la izquierda, formulario
-  sticky a la derecha (siempre visible al scrollear, `lg:sticky top-20`).
-  Mobile: columna única con formulario al final (pendiente mejorar).
+  sticky a la derecha (`lg:sticky top-20 self-start`, `w-[380px] xl:w-[420px]`).
+  El sidebar usa `<DesarrolloForm compact />` para que todo el formulario
+  entre en una pantalla sin scroll. Mobile: columna única con formulario
+  al final (`lg:hidden`), usa `<DesarrolloForm />` sin compact.
 - `/distribuidores`: **completa y funcional**.
 - `/contacto`: **funcional + Resend conectado**. Endpoint
   `/api/contacto/route.ts` manda mail y persiste lead en Redis.
