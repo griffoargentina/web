@@ -176,6 +176,10 @@ rediseñar toda la paleta.
   chicos (`py-2 px-3 text-sm`), sin título/subtítulo interno, textarea 3 filas,
   `space-y-3`. En modo normal: card blanca con sombra, `p-6 lg:p-8 space-y-5`.
   Se usa `compact` en el sidebar sticky de desktop; sin `compact` en el form mobile.
+- `components/FloatingConsultarButton.tsx` — botón flotante mobile (client).
+  Fixed en la parte inferior, solo en mobile (`lg:hidden`). Usa `IntersectionObserver`
+  para ocultarse con transición suave cuando la sección `#consulta` entra en pantalla.
+  Se muestra mientras el usuario recorre el contenido; desaparece al llegar al form.
 - `components/PageHero.tsx` — ya solo exporta `ComingSoon` (el hero original
   fue removido). Se usa en páginas stub.
 - `components/HomeSearch.tsx` — buscador liviano de la home (client). 5 tabs
