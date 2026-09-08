@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AssetImage } from "@/components/AssetImage";
 import { AssetVideo } from "@/components/AssetVideo";
 import { DesarrolloForm } from "@/components/DesarrolloForm";
+import { FloatingConsultarButton } from "@/components/FloatingConsultarButton";
 
 export const metadata: Metadata = {
   title: "Desarrollo a medida",
@@ -173,6 +174,9 @@ export default function DesarrolloAMedidaPage() {
         </section>
 
       </div>
+
+      {/* Botón flotante mobile — se oculta al llegar al formulario */}
+      <FloatingConsultarButton />
 
       {/* ── COLUMNA DERECHA: formulario sticky (solo desktop) ──────────── */}
       <aside className="hidden lg:block lg:sticky lg:top-20 self-start w-[380px] xl:w-[420px] shrink-0 border-l border-gray-200 bg-gray-50 min-h-screen px-8 py-10">
