@@ -35,7 +35,7 @@ export default function DesarrolloAMedidaPage() {
               <h1 className="text-2xl lg:text-3xl text-primary font-medium leading-tight">
                 Desarrollos a medida de piezas de caucho moldeado
               </h1>
-              <p className="text-base lg:text-lg text-gray-600 leading-relaxed font-medium">
+              <p className="text-base lg:text-lg text-gray-600 leading-relaxed font-medium text-justify hyphens-auto">
                 Proveemos piezas de caucho moldeado bajo demanda a empresas de la
                 industria alimenticia, de petróleo, de electrodomésticos,
                 autopartistas, entre otros. Donde nos caracterizamos por entender
@@ -44,7 +44,7 @@ export default function DesarrolloAMedidaPage() {
             </div>
             <div className="flex justify-center lg:justify-end rounded-xl overflow-hidden">
               <AssetImage
-                src="/images/empresa/industriales.jpg"
+                src="/images/desarrollo-a-medida/hero.jpg"
                 alt="Piezas de caucho desarrollo a medida"
                 caption="Piezas header"
                 bare
@@ -71,7 +71,7 @@ export default function DesarrolloAMedidaPage() {
                   Contamos con todo el equipamiento necesario para producir
                   piezas moldeadas asegurando calidad.
                 </h3>
-                <p className="text-black text-sm leading-relaxed">
+                <p className="text-black text-sm leading-relaxed text-justify hyphens-auto">
                   Disponemos de equipos de diferentes tamaños que nos permiten
                   cubrir diversas necesidades, para piezas de uso frecuente de
                   alta/media/baja producción y/o de grandes dimensiones.
@@ -107,7 +107,7 @@ export default function DesarrolloAMedidaPage() {
                   Nos permite desarrollar y asegurar homogeneidad en compuestos
                   según las necesidades del cliente.
                 </h3>
-                <p className="text-black text-sm leading-relaxed">
+                <p className="text-black text-sm leading-relaxed text-justify hyphens-auto">
                   Contamos con Reómetro, cámara de ozono, estufa, cicladora,
                   entre otros importantes elementos necesarios para asegurar la
                   calidad. Además de laboratorios externos para complementar
