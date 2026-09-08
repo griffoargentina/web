@@ -44,7 +44,7 @@ export default function DesarrolloAMedidaPage() {
             </div>
             <div className="flex justify-center lg:justify-end rounded-xl overflow-hidden">
               <AssetImage
-                src="/images/desarrollo-a-medida/hero.jpg"
+                src="/images/desarrollo-a-medida/header.jpg"
                 alt="Piezas de caucho desarrollo a medida"
                 caption="Piezas header"
                 bare
