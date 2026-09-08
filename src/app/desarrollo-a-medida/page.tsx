@@ -186,10 +186,6 @@ export default function DesarrolloAMedidaPage() {
         <ul className="mb-6 space-y-2 text-sm text-gray-700">
           <li className="flex items-start gap-2">
             <span className="text-primary font-bold mt-0.5">✓</span>
-            Respuesta en menos de 48 hs hábiles
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-primary font-bold mt-0.5">✓</span>
             Asesoramiento técnico gratuito
           </li>
           <li className="flex items-start gap-2">
