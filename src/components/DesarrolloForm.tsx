@@ -15,7 +15,7 @@ const INDUSTRIAS = [
   "Otra",
 ];
 
-export function DesarrolloForm() {
+export function DesarrolloForm({ compact = false }: { compact?: boolean }) {
   const [status, setStatus] = useState<Status>("idle");
   const [fileName, setFileName] = useState<string>("");
   const fileRef = useRef<HTMLInputElement>(null);
@@ -40,100 +40,78 @@ export function DesarrolloForm() {
     }
   }
 
+  const gap = compact ? "gap-3" : "gap-4";
+  const inputCls = compact
+    ? "w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary"
+    : "w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary";
+  const selectCls = compact
+    ? "w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
+    : "w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer";
+
   return (
     <form
       ref={formRef}
       onSubmit={onSubmit}
-      className="bg-white rounded-lg shadow-lg p-6 lg:p-8 space-y-5"
+      className={compact ? "space-y-3" : "bg-white rounded-lg shadow-lg p-6 lg:p-8 space-y-5"}
       encType="multipart/form-data"
     >
       <HoneypotField />
-      <h3 className="text-xl font-black text-[#0a2b3d]">
-        Contanos qué pieza necesitás
-      </h3>
-      <p className="text-sm text-gray-500">
-        Completá el formulario y te asesoramos sin compromiso.
-      </p>
+      {!compact && (
+        <>
+          <h3 className="text-xl font-black text-[#0a2b3d]">
+            Contanos qué pieza necesitás
+          </h3>
+          <p className="text-sm text-gray-500">
+            Completá el formulario y te asesoramos sin compromiso.
+          </p>
+        </>
+      )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field
-          name="nombre"
-          placeholder="Nombre y Apellido *"
-          required
-        />
-        <Field
-          name="empresa"
-          placeholder="Empresa *"
-          required
-        />
-        <Field
-          name="email"
-          type="email"
-          placeholder="Email *"
-          required
-        />
-        <Field name="telefono" type="tel" placeholder="Teléfono" />
+      <div className={`grid grid-cols-2 ${gap}`}>
+        <input id="nombre" name="nombre" type="text" placeholder="Nombre *" required className={inputCls} />
+        <input id="empresa" name="empresa" type="text" placeholder="Empresa *" required className={inputCls} />
+        <input id="email" name="email" type="email" placeholder="Email *" required className={inputCls} />
+        <input id="telefono" name="telefono" type="tel" placeholder="Teléfono" className={inputCls} />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className={`grid grid-cols-2 ${gap}`}>
         <div>
-          <label htmlFor="industria" className="sr-only">
-            Industria
-          </label>
-          <select
-            id="industria"
-            name="industria"
-            required
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
-            defaultValue=""
-          >
-            <option value="" disabled>
-              Industria *
-            </option>
+          <label htmlFor="industria" className="sr-only">Industria</label>
+          <select id="industria" name="industria" required className={selectCls} defaultValue="">
+            <option value="" disabled>Industria *</option>
             {INDUSTRIAS.map((i) => (
-              <option key={i} value={i}>
-                {i}
-              </option>
+              <option key={i} value={i}>{i}</option>
             ))}
           </select>
         </div>
-
         <div>
-          <label htmlFor="cantidad" className="sr-only">
-            Cantidad anual
-          </label>
-          <input
-            id="cantidad"
-            name="cantidad"
-            type="text"
-            placeholder="Cantidad anual"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary"
-          />
+          <label htmlFor="cantidad" className="sr-only">Cantidad anual</label>
+          <input id="cantidad" name="cantidad" type="text" placeholder="Cantidad anual" className={inputCls} />
         </div>
       </div>
 
       <div>
-        <label htmlFor="descripcion" className="sr-only">
-          Descripción de la pieza
-        </label>
+        <label htmlFor="descripcion" className="sr-only">Descripción de la pieza</label>
         <textarea
           id="descripcion"
           name="descripcion"
           required
-          rows={4}
-          placeholder="Describí la pieza que necesitás: uso, material, dimensiones aproximadas, etc. *"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-y"
+          rows={compact ? 3 : 4}
+          placeholder="Describí la pieza: uso, material, dimensiones aproximadas… *"
+          className={`w-full ${compact ? "px-3 py-2 text-sm" : "px-4 py-3"} border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-y`}
         />
       </div>
 
       {/* Upload de plano o muestra */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-2">
-          ¿Tenés plano o muestra? (imagen o PDF)
-        </label>
+        {!compact && (
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            ¿Tenés plano o muestra? (imagen o PDF)
+          </label>
+        )}
         <div
           onClick={() => fileRef.current?.click()}
-          className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition"
+          className={`border-2 border-dashed border-gray-300 rounded-lg ${compact ? "p-2" : "p-4"} text-center cursor-pointer hover:border-primary hover:bg-primary/5 transition`}
         >
           <input
             ref={fileRef}
@@ -162,25 +140,9 @@ export function DesarrolloForm() {
               </button>
             </p>
           ) : (
-            <div className="text-gray-400">
-              <svg
-                width="32"
-                height="32"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                className="mx-auto mb-1"
-              >
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-              </svg>
-              <p className="text-sm">
-                Click para adjuntar imagen o PDF
-              </p>
-              <p className="text-xs text-gray-300 mt-1">
-                Máximo 5 MB
-              </p>
-            </div>
+            <p className="text-sm text-gray-400">
+              📎 {compact ? "Adjuntar plano o PDF (máx. 5 MB)" : "Click para adjuntar imagen o PDF — Máx. 5 MB"}
+            </p>
           )}
         </div>
       </div>
@@ -188,18 +150,18 @@ export function DesarrolloForm() {
       <button
         type="submit"
         disabled={status === "loading"}
-        className="w-full sm:w-auto px-10 py-3 uppercase bg-primary text-white font-bold rounded-full border border-primary hover:bg-white hover:text-primary transition disabled:opacity-60 cursor-pointer"
+        className={`w-full ${compact ? "py-2.5 text-sm" : "sm:w-auto px-10 py-3"} uppercase bg-primary text-white font-bold rounded-full border border-primary hover:bg-white hover:text-primary transition disabled:opacity-60 cursor-pointer`}
       >
         {status === "loading" ? "Enviando..." : "Enviar consulta"}
       </button>
 
       {status === "ok" && (
-        <p className="text-green-700 font-semibold">
+        <p className="text-green-700 font-semibold text-sm">
           ¡Gracias! Recibimos tu consulta. Te contactamos a la brevedad.
         </p>
       )}
       {status === "error" && (
-        <p className="text-red-700 font-semibold">
+        <p className="text-red-700 font-semibold text-sm">
           Hubo un error. Probá de nuevo o escribinos por WhatsApp.
         </p>
       )}

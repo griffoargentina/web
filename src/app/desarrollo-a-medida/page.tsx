@@ -197,7 +197,7 @@ export default function DesarrolloAMedidaPage() {
             Certificación ISO 9001
           </li>
         </ul>
-        <DesarrolloForm />
+        <DesarrolloForm compact />
       </aside>
 
     </div>
