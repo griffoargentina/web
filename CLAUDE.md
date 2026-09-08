@@ -1471,7 +1471,7 @@ anónima**. Es suficiente para decisiones de catálogo y más privacy-friendly.
 - `public/images/empresa/*` — 6 archivos reales.
 - `public/products/*` — 3 cards del home (producto/catalogo/lanzamiento).
 - `public/images/desarrollo-a-medida/` — carpeta lista. La página espera:
-  `hero.jpg` (foto del hero, pendiente de subir por la cliente), `ico1.svg`,
+  `header.jpg` (foto del hero — ya subida), `ico1.svg`,
   `ico2.svg`, `tecnologia.jpg` (poster del video), `laboratorio.jpg` (poster).
 - `public/videos/.gitkeep` — carpeta lista, sin archivos (tecnologia.mp4,
   medida.mp4 pendientes).
