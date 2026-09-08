@@ -206,6 +206,9 @@ rediseñar toda la paleta.
 - `/empresa`: **completa** con contenido real del sitio original.
 - `/desarrollo-a-medida`: **completa + formulario de consulta**
   (DesarrolloForm → `/api/desarrollo`). Algunos assets pendientes.
+  Layout desktop: 2 columnas — contenido a la izquierda, formulario
+  sticky a la derecha (siempre visible al scrollear, `lg:sticky top-20`).
+  Mobile: columna única con formulario al final (pendiente mejorar).
 - `/distribuidores`: **completa y funcional**.
 - `/contacto`: **funcional + Resend conectado**. Endpoint
   `/api/contacto/route.ts` manda mail y persiste lead en Redis.
