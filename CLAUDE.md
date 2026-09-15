@@ -764,18 +764,29 @@ detalle del producto. Devuelve `{ ubicaciones, lados, tipoDireccion? }`.
      allowlist, se parsea la descripción (ej. "Dirección: HIDRÁULICA")
      para extraer el tipo. La `ProductCard` lo muestra como
      "Tipo: Mecánica / Hidráulica / Eléctrica / Electrohidráulica".
-- **Transmisión**: usa lookup estático `src/data/transmision-lado.ts` (generado
-  del Excel `Tabla_Aplicaciones` de Promotive, 216 códigos). La API de SpecParts
-  no devuelve este dato en los atributos del producto ni del vehículo — vive en la
-  "OBSERVACION APLICACIÓN" de la tabla de aplicaciones interna de Promotive, que
-  no está expuesta en el endpoint `/part/list`. El lookup es la fuente canónica:
-  - **CAJA/RUEDA** (`productSide`): 87 piezas Rueda, 115 Caja, 14 AMBOS (varía por vehículo).
-  - **IZQ/DER** (`productIzqDer`): 201 piezas AMBOS, 9 solo IZQ, 6 solo DER.
-    Usado en el Excel de backup (hojas Base y Cobertura) para clasificar por columna.
-  Para regenerar ambos: `python3 scripts/gen-transmision-lado.py NuevoExcel.xlsx`.
-  `VehiclesModal` muestra un badge por vehículo (azul=Rueda, ámbar=Caja) usando
-  `vehicle.code` (CODIGO PROMOTIVE) para resolver los 14 casos AMBOS de CAJA/RUEDA.
-  `getTransmisionIzqDer(productCode)` → `IZQ | DER | AMBOS | null`.
+- **Transmisión** (y Dirección): desde jul-2026, SpecParts expone
+  `vehicle.application_details` con el detalle de aplicación pieza-vehículo
+  (ej: `"Semiejes Izq y Der / Lado Rueda"`, `"Cremallera Der"`). Esta es ahora la
+  **fuente primaria** para IZQ/DER y CAJA/RUEDA. Helpers en `src/lib/catalog/display.ts`:
+  - `parseAppDetails(text)` → `{ izqDer: IZQ|DER|AMBOS|null, lado: CAJA|RUEDA|AMBOS|null }`
+  - `getProductAppDetails(product)` → agrega `application_details` de todos los vehículos
+    (unión: si algún vehículo tiene IZQ y otro DER → AMBOS).
+  Fallback: si ningún vehículo tiene `application_details`, se usa el lookup estático
+  `src/data/transmision-lado.ts` (Excel Promotive, 216 códigos).
+  `getDisplayApplication()` aplica API primero, fallback al Excel.
+  `VehiclesModal` — `VehicleLadoBadge` usa `vehicle.application_details` para el badge
+  CAJA/RUEDA por vehículo; fallback al lookup estático.
+  `catalog-backup.ts` — `getProductBaseColIndices()` y `getCoberturaColIndices()`
+  usan `getProductAppDetails()` para IZQ/DER; fallback a `getTransmisionIzqDer()`.
+  **Cuando la API tenga cobertura completa**, se puede eliminar `transmision-lado.ts`
+  y sus imports. Por ahora se mantiene como seguro de red.
+
+**Nota sobre `application_details`** (nuevo campo jul-2026):
+- Campo dentro de cada objeto `vehicle` en la respuesta de `/part/list`.
+- Texto libre con la observación pieza-vehículo de la Tabla de Aplicaciones interna de Promotive.
+- Aplica a Transmisión y Dirección (y potencialmente otras líneas en el futuro).
+- El campo `SpecPartsVehicle.application_details?: string` está tipado en `src/types/specparts.ts`.
+- El cliente HTTP no filtra campos de vehículos — llega automáticamente.
 
 **Nota sobre atributos de SpecParts**:
 - `observation` a nivel producto: SpecParts empezó a poblarlo (julio 2026)
