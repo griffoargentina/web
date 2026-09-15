@@ -4,6 +4,7 @@ import { useEffect } from "react";
 
 import type { SpecPartsVehicle } from "@/types/specparts";
 import { getTransmisionLado } from "@/data/transmision-lado";
+import { parseAppDetails } from "@/lib/catalog/display";
 
 type Props = {
   open: boolean;
@@ -128,7 +129,11 @@ export function VehiclesModal({
                               </span>
                             ) : null}
                           </span>
-                          <VehicleLadoBadge productCode={productCode} vehicleCode={v.code} />
+                          <VehicleLadoBadge
+                            applicationDetails={v.application_details}
+                            productCode={productCode}
+                            vehicleCode={v.code}
+                          />
                         </li>
                       );
                     })}
@@ -143,17 +148,22 @@ export function VehiclesModal({
   );
 }
 
-/** Badge de Lado Rueda / Lado Caja — solo aparece en productos de Transmisión
- *  cuando el lookup tiene datos. Para los 14 piezas AMBOS, usa el código del
- *  vehículo (CODIGO PROMOTIVE) para obtener el lado específico. */
+/** Badge de Lado Rueda / Lado Caja para productos de Transmisión.
+ *  Fuente primaria: application_details del vehículo (API SpecParts).
+ *  Fallback: lookup estático del Excel Promotive (para productos sin application_details). */
 function VehicleLadoBadge({
+  applicationDetails,
   productCode,
   vehicleCode,
 }: {
+  applicationDetails?: string;
   productCode: string;
   vehicleCode?: string;
 }) {
-  const lado = getTransmisionLado(productCode, vehicleCode);
+  // Fuente primaria: application_details del vehículo.
+  const lado: "CAJA" | "RUEDA" | "AMBOS" | null = applicationDetails
+    ? parseAppDetails(applicationDetails).lado
+    : getTransmisionLado(productCode, vehicleCode);
   if (!lado) return null;
 
   if (lado === "RUEDA") {

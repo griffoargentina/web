@@ -29,6 +29,7 @@ export type SpecPartsAttribute = {
 
 export type SpecPartsVehicle = {
   market_name?: string;
+  /** Código Promotive — identifica el vehículo en la Tabla de Aplicaciones. */
   code?: string;
   brand: string;
   master_model: string;
@@ -36,6 +37,15 @@ export type SpecPartsVehicle = {
   version: string;
   sold_from_year: number;
   sold_until_year: number;
+  /**
+   * Detalle de aplicación cargado por SpecParts desde la observación pieza-vehículo
+   * de la Tabla de Aplicaciones interna. Ejemplos:
+   *  - "Semiejes Izq y Der / Lado Rueda"
+   *  - "Semieje Izq / Lado Caja"
+   *  - "Cremallera Der"
+   * Fuente canónica para IZQ/DER y CAJA/RUEDA — reemplaza el lookup de Excel.
+   */
+  application_details?: string;
 };
 
 export type SpecPartsCross = {

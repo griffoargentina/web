@@ -40,8 +40,8 @@ import ExcelJS from "exceljs";
 
 import flotaData from "@/data/flota-circulante.json";
 import { listCatalog } from "@/lib/api/specparts";
-import { getDisplayApplication } from "@/lib/catalog/display";
-import { getTransmisionIzqDer } from "@/data/transmision-lado";
+import { getDisplayApplication, getProductAppDetails } from "@/lib/catalog/display";
+import { getTransmisionIzqDer } from "@/data/transmision-lado"; // fallback para productos sin application_details
 import { getAttrValues } from "@/lib/catalog/utils";
 import { getRedis } from "@/lib/kv";
 import type { CatalogProduct, SpecPartsVehicle } from "@/types/specparts";
@@ -382,10 +382,12 @@ function getProductBaseColIndices(p: CatalogProduct): number[] {
   if (cat.includes("trans")) {
     const isCaja  = ubs.some((s) => s.includes("CAJA"));
     const isRueda = ubs.some((s) => s.includes("RUEDA"));
-    // IZQ/DER: lookup estático (Tabla Aplicaciones), más confiable que atributos SpecParts.
-    const izqDer = getTransmisionIzqDer(p.code);
-    const isDer = izqDer === "DER" || izqDer === "AMBOS";
-    const isIzq = izqDer === "IZQ" || izqDer === "AMBOS";
+    // IZQ/DER: fuente primaria application_details (API SpecParts jul-2026).
+    // Fallback: lookup estático del Excel Promotive.
+    const apiDetails = getProductAppDetails(p);
+    const izqDerFinal = apiDetails.izqDer ?? getTransmisionIzqDer(p.code);
+    const isDer = izqDerFinal === "DER" || izqDerFinal === "AMBOS";
+    const isIzq = izqDerFinal === "IZQ" || izqDerFinal === "AMBOS";
     if (!isKit) {
       if (isDer && isCaja)  cols.push(7);
       if (isDer && isRueda) cols.push(8);
@@ -671,10 +673,12 @@ function getCoberturaColIndices(p: CatalogProduct): number[] {
   if (cat.includes("trans")) {
     const isCaja  = ubs.some((s) => s.includes("CAJA"));
     const isRueda = ubs.some((s) => s.includes("RUEDA"));
-    // IZQ/DER: lookup estático (Tabla Aplicaciones), más confiable que atributos SpecParts.
-    const izqDer = getTransmisionIzqDer(p.code);
-    const isDer = izqDer === "DER" || izqDer === "AMBOS";
-    const isIzq = izqDer === "IZQ" || izqDer === "AMBOS";
+    // IZQ/DER: fuente primaria application_details (API SpecParts jul-2026).
+    // Fallback: lookup estático del Excel Promotive.
+    const apiDetails = getProductAppDetails(p);
+    const izqDerFinal = apiDetails.izqDer ?? getTransmisionIzqDer(p.code);
+    const isDer = izqDerFinal === "DER" || izqDerFinal === "AMBOS";
+    const isIzq = izqDerFinal === "IZQ" || izqDerFinal === "AMBOS";
     if (!isKit) {
       if (isDer && isCaja)  cols.push(11);
       if (isDer && isRueda) cols.push(12);
