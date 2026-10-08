@@ -203,7 +203,10 @@ function groupVehiclesByBrand(vehicles: SpecPartsVehicle[]): Record<string, Spec
       const ma = (a.master_model || a.model || "").toUpperCase();
       const mb = (b.master_model || b.model || "").toUpperCase();
       if (ma !== mb) return ma.localeCompare(mb);
-      return (a.version || "").toUpperCase().localeCompare((b.version || "").toUpperCase());
+      const va = (a.version || "").toUpperCase();
+      const vb = (b.version || "").toUpperCase();
+      if (va !== vb) return va.localeCompare(vb);
+      return (a.sold_from_year || 0) - (b.sold_from_year || 0);
     });
     sorted[brand] = out[brand];
   }
