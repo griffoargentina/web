@@ -89,8 +89,14 @@ Todo lo siguiente se construyó entre el merge de la rama nueva y el
 - [x] Cuenta corriente del portal con datos reales del ERP
       (fallback a mock si código coincide con cliente mock,
       "no disponible" si es otro)
+- [x] **Vercel Blob store recreado** (oct-2026): el store original se
+      bloqueó (token "Needs Attention"). Nuevo store `griffo-blob`
+      creado en el equipo `griffoargentina` con acceso público.
+      Los archivos que había (banners, listas de precios, descargas
+      del admin) hay que volver a subirlos desde el admin.
 
 ### UX (sprint 2026-04 final)
+- [x] VehiclesModal: vehículos ordenados modelo → versión → año asc
 - [x] Productos destacados: grilla compacta — entra sin scroll
 - [x] Distribuidores: thead sticky con headers visibles al scrollear
 - [x] Descargas: rediseño compacto en una lista única + thumbnails
